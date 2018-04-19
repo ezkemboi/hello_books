@@ -2,11 +2,10 @@
 The file contains the for user functions including register, login, logout, reset-password and logout
 """
 import unittest
+import os
 import json
 
-from app import create_app
-from app.models import db
-import run
+from app import create_app, db
 
 
 class AuthTestCase(unittest.TestCase):
@@ -16,7 +15,7 @@ class AuthTestCase(unittest.TestCase):
     def setUp(self):
         """Initialize the application for testing"""
         self.app = create_app(config_name='testing')
-        self.client = run.app.test_client()
+        self.client = self.app.test_client()
         self.user_data = {
             'email': "myemail@gmail.com",
             'username': "testuser",

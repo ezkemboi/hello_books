@@ -2,7 +2,8 @@
 The file that runs the application
 """
 import os
-from app.app import app
+from app import app
+from app.endpoints import api
 
 config_name = os.getenv('APP_SETTINGS')
 
