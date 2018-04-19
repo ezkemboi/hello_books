@@ -1,21 +1,40 @@
 """
 This file holds all the resources for user from registration to borrow books and return books
 """
+import datetime
 import re
-from flask import Flask, session, render_template
+from flask import Flask, render_template
 from flask_restful import Resource, Api, reqparse
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token,\
-    get_jwt_identity
+    get_jwt_identity, create_refresh_token, get_raw_jwt, jwt_refresh_token_required
 import random
 
 
-from .models import User, Book, Borrow, UserBorrowHistory
+from .models import User, Book, Borrow, UserBorrowHistory, Admin, RevokedToken
 
 app = Flask(__name__)
 api = Api(app, prefix='/api/v1')
 app.secret_key = 'mysecretkeyishere'
+app.config['JWT_SECRET_KEY'] = '123$%##ghdsertes#$2'
+app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+app.config.setdefault('JWT_TOKEN_LOCATION', ['headers'])
+app.config.setdefault('JWT_HEADER_NAME', 'Authorization')
+app.config.setdefault('JWT_HEADER_TYPE', '')
+app.config.setdefault('JWT_ACCESS_TOKEN_EXPIRES', datetime.timedelta(minutes=15))
+app.config.setdefault('JWT_REFRESH_TOKEN_EXPIRES', datetime.timedelta(days=30))
+app.config.setdefault('JWT_ALGORITHM', 'HS256')
+app.config['JWT_IDENTITY_CLAIM'] = ['identity']
+app.config['JWT_USER_CLAIMS'] = ['user_claims']
 jwt = JWTManager(app)
 app.url_map.strict_slashes = False
+PROPAGATE_EXCEPTIONS = True
+
+
+@jwt.token_in_blacklist_loader
+def check_if_token_in_blacklist(decrypted_token):
+    jti = decrypted_token['jti']
+    return RevokedToken.is_jti_blacklist(jti)
 
 # Define all parsers for all classes
 login_parser = reqparse.RequestParser()
@@ -31,6 +50,7 @@ add_book_parser = reqparse.RequestParser()
 add_book_parser.add_argument('book_title', type=str, help='Please enter the book title', required=True)
 add_book_parser.add_argument('authors', type=str, help='Please enter the authors name', required=True)
 add_book_parser.add_argument('year', type=int, help='Please enter the year published')
+add_book_parser.add_argument('no_of_copies', type=int, help='Enter the number of copies')
 
 edit_book_parser = add_book_parser.copy()
 delete_book_parser = reqparse.RequestParser()
@@ -93,9 +113,11 @@ class UserLogin(Resource):
         if not log_in_user:
             return {"Message": "Invalid email!"}, 403
         elif log_in_user and log_in_user.check_password(password):
-            access_token = create_access_token(identity=email)
-            session['logged_in'] = True
-            return {'Message': "Successfully logged in.", "Access token": access_token}, 200
+            ret_token = {
+                'access_token': create_access_token(identity=email),
+                'refresh_token': create_refresh_token(identity=email)
+            }
+            return {'Message': "Successfully logged in.", "Authentication token": ret_token}, 200
         return {"Message": "Wrong password!"}, 401
 
 
@@ -103,9 +125,12 @@ class UserLogout(Resource):
     """
         It holds user logout functionality
     """
+    @jwt_required
     def post(self):
         """Post Method to logout user"""
-        session['logged_in'] = False
+        jti = get_raw_jwt()['jti']
+        revoked_token = RevokedToken(jti=jti)
+        revoked_token.add()
         return {"Message": "Your logged out."}, 200
 
 
@@ -134,27 +159,39 @@ class AddBook(Resource):
     """
     Contains all the methods to add book, list all books
     """
-    def post(self):
+    @jwt_refresh_token_required
+    def post(self, user_id):
+        print("yes")
         """Post method to allow addition of book"""
         args = add_book_parser.parse_args()
-        book_id = random.randint(1111, 9999)
-        book_title = args['book_title']
-        authors = args['authors']
-        year = args['year']
-        existing_id = Book.get_book_by_id(book_id)
-        if not book_title or not authors:
-            return {"Message": "Please fill all the details."}, 400
-        if existing_id:
-            return {"Message": "A book with that id already exist."}, 400
-        elif not existing_id:
-            new_book = Book(book_id, book_title, authors, year)
-            new_book.book_id = book_id
-            new_book.book_title = book_title
-            new_book.authors = authors
-            new_book.year = year
-            new_book.save_book()
-            result = new_book.book_serializer()
-            return {"Message": "The book was added successfully.", "Book Added": result}, 201
+        current_user = get_jwt_identity()
+        refresh_token = {
+            'access_token': create_access_token(identity=current_user)
+        }
+        confirm_admin = Admin.get_admin(user_id)
+        if refresh_token and confirm_admin:
+            no_of_copies = args['no_of_copies']
+            book_quantity = 0
+            while book_quantity <= no_of_copies:
+                book_id = random.randint(1111, 9999)
+                book_title = args['book_title']
+                authors = args['authors']
+                year = args['year']
+                existing_id = Book.get_book_by_id(book_id)
+                if not book_title or not authors:
+                    return {"Message": "Please fill all the details."}, 400
+                if existing_id:
+                    return {"Message": "A book with that id already exist."}, 400
+                elif not existing_id:
+                    new_book = Book(book_id, book_title, authors, year)
+                    new_book.book_id = book_id
+                    new_book.book_title = book_title
+                    new_book.authors = authors
+                    new_book.year = year
+                    new_book.save_book()
+                    book_quantity += 1
+                    result = new_book.book_serializer()
+                    return {"Message": "The book was added successfully.", "Book Added": result}, 201
 
     def get(self):
         """Get method to get all books"""
@@ -170,32 +207,45 @@ class SingleBook(Resource):
     """
     Contains all activities of a single book, including editing, getting and removing a book.
     """
-    def put(self, book_id):
+    @jwt_refresh_token_required
+    def put(self, book_id, user_id):
         """Put method to edit already existing book"""
         args = edit_book_parser.parse_args()
-        get_book = Book.get_book_by_id(book_id)
-        book_title = args['book_title']
-        authors = args['authors']
-        year = args['year']
-        if not book_id:
-            return {"Message": "The book is not found."}, 404
-        if get_book and get_book.book_id == book_id:
-            get_book.book_title = book_title
-            get_book.authors = authors
-            get_book.year = year
-            get_book.update_book()
-            edited_book = get_book.book_serializer()
-            return {"Success": edited_book}, 200
+        current_user = get_jwt_identity()
+        refresh_token = {
+            'access_token': create_access_token(identity=current_user)
+        }
+        confirm_admin = Admin.get_admin(user_id)
+        if refresh_token and confirm_admin:
+            if not book_id:
+                return {"Message": "The book is not found."}, 404
+            get_book = Book.get_book_by_id(book_id)
+            book_title = args['book_title']
+            authors = args['authors']
+            year = args['year']
+            if get_book and get_book.book_id == book_id:
+                get_book.book_title = book_title
+                get_book.authors = authors
+                get_book.year = year
+                get_book.update_book()
+                edited_book = get_book.book_serializer()
+                return {"Success": edited_book}, 200
 
-    def delete(self, book_id):
+    @jwt_refresh_token_required
+    def delete(self, book_id, user_id):
         """Delete method to delete a single book"""
-
-        if book_id:
-            get_book_id = Book.get_book_by_id(book_id)
-            if get_book_id:
-                get_book_id.delete_book()
-                return {"Message": "The book was deleted successfully."}, 204
-            return {"Error": "Book not found."}, 404
+        current_user = get_jwt_identity()
+        refresh_token = {
+            'access_token': create_access_token(identity=current_user)
+        }
+        confirm_admin = Admin.get_admin(user_id)
+        if refresh_token and confirm_admin:
+            if book_id:
+                get_book_id = Book.get_book_by_id(book_id)
+                if get_book_id:
+                    get_book_id.delete_book()
+                    return {"Message": "The book was deleted successfully."}, 204
+                return {"Error": "Book not found."}, 404
 
     def get(self, book_id):
         """Get method for a single book"""
@@ -211,49 +261,68 @@ class BorrowBook(Resource):
     """
     This class hold function for user can borrow, return book and check history
     """
-
-    def post(self, book_id):
+    @jwt_refresh_token_required
+    def post(self, book_id, user_id):
         """Post method for user to borrow book"""
-        get_book = Book.get_book_by_id(book_id)
-        if not get_book:
-            return {"Message": "The book you want to borrow is unavailable."}, 404
-        borrow_book = Borrow.save_borrowed_book(book_id)
-        return {"Message": "successfully borrowed the book", "Book": borrow_book}, 202
+        current_user = get_jwt_identity()
+        refresh_token = {
+            'access_token': create_access_token(identity=current_user)
+        }
+        confirm_user = User.get_user_by_id(user_id)
+        if refresh_token and confirm_user:
+            get_book = Book.get_book_by_id(book_id)
+            if not get_book:
+                return {"Message": "The book you want to borrow is unavailable."}, 404
+            borrow_book = Borrow.save_borrowed_book(book_id)
+            return {"Message": "successfully borrowed the book", "Book": borrow_book}, 202
 
-    def put(self, book_id):
+    @jwt_refresh_token_required
+    def put(self, book_id, user_id):
         """Put method to allow user return book"""
-        return_book = Borrow.get_borrow_book_by_id(book_id)
-        if return_book:
-            Borrow.return_borrowed_book(book_id)
-            return {"Message": "You have returned the book successfully."}, 202
+        current_user = get_jwt_identity()
+        refresh_token = {
+            'access_token': create_access_token(identity=current_user)
+        }
+        confirm_user = User.get_user_by_id(user_id)
+        if refresh_token and confirm_user:
+            return_book = Borrow.get_borrow_book_by_id(book_id)
+            if return_book:
+                Borrow.return_borrowed_book(book_id)
+                return {"Message": "You have returned the book successfully."}, 202
 
 
 class BorrowHistory(Resource):
     """
     This class contains the book borrowing history
     """
-
-    def get(self):
+    @jwt_required
+    def get(self, user_id):
         """It returns the users borrowing history"""
-        borrow_history_books = UserBorrowHistory.get_borrow_history()
-        if not borrow_history_books:
-            return {"Message": "You have not borrowed any book."}, 404
-        results = [borrow_history_book.borrowing_history_serializer()
-                   for borrow_history_book in borrow_history_books]
-        return {"Borrowed Books": results}, 200
+        current_user = get_jwt_identity()
+        confirm_id = User.get_user_by_id(user_id)
+        if current_user and confirm_id:
+            borrow_history_books = UserBorrowHistory.get_borrow_history()
+            if not borrow_history_books:
+                return {"Message": "You have not borrowed any book."}, 404
+            results = [borrow_history_book.borrowing_history_serializer()
+                       for borrow_history_book in borrow_history_books]
+            return {"Borrowed Books": results}, 200
 
 
 class UnReturnedBooks(Resource):
     """Contains a list of books that a user has not yet returned"""
-
-    def get(self):
+    @jwt_required
+    def get(self, user_id):
         """User history of books not yet returned"""
-        un_returned_books = UserBorrowHistory.get_books_not_yet_returned()
-        if not un_returned_books:
-            return {"Message": "Currently you do not have un-returned books"}, 404
-        results = [un_returned_book.borrowing_history_serializer()
-                   for un_returned_book in un_returned_books]
-        return {"Un-returned books": results}, 200
+        current_user = get_jwt_identity()
+        confirm_id = User.get_user_by_id(user_id)
+        if current_user and confirm_id:
+            un_returned_books = UserBorrowHistory.get_books_not_yet_returned()
+            if not un_returned_books:
+                return {"Message": "Currently you do not have un-returned books"}, 404
+            results = [un_returned_book.borrowing_history_serializer()
+                       for un_returned_book in un_returned_books]
+            return {"Un-returned books": results}, 200
 
 
 # The registration of all endpoints

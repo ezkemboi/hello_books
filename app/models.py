@@ -16,6 +16,7 @@ class User(db.Model):
     email = db.Column(db.String, unique=True)
     username = db.Column(db.String, unique=True)
     password = db.Column(db.String)
+    __mapper_args__ = {'polymorphic_identity': username}
     borrows = db.relationship('Borrow', backref='users', lazy='dynamic')
 
     def __init__(self, user_id, email, username, password):
@@ -56,10 +57,27 @@ class User(db.Model):
         """This method allow filter of users by their username"""
         return User.query.filter_by(username=username).first
 
+    @staticmethod
+    def get_user_by_id(user_id):
+        """Get the user by user_id"""
+        return User.query.get(user_id)
+
     def save_user(self):
         """The method is used to save the user in the list"""
         db.session.add(self)
         db.session.commit()
+
+
+class Admin(User):
+    """
+    This class inherit from class user and contains admin methods
+    """
+    __mapper_args__ = {'polymorphic_identity': 'admin'}
+    admin = db.Column(db.Boolean, default=True)
+
+    @staticmethod
+    def get_admin(user_id):
+        return Admin.query.get(user_id)
 
 
 class Book(db.Model):
@@ -201,3 +219,19 @@ class UserBorrowHistory(db.Model):
     def get_books_not_yet_returned():
         return UserBorrowHistory.query.filter(
             UserBorrowHistory.return_status.is_(False)).all()
+
+
+class RevokedToken(db.Model):
+    """Holds the tokens"""
+    __tablename__ = 'revoked_tokens'
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String)
+
+    def add(self):
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
+    def is_jti_blacklist(cls, jti):
+        confirm_blacklist = cls.query.filter_by(jti=jti).first()
+        return bool(confirm_blacklist)
