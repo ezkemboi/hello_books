@@ -105,7 +105,6 @@ class UserLogin(Resource):
             access_token = log_in_user.generate_token(log_in_user.user_id)
             if access_token:
                 return {'Message': "Successfully logged in.", "Access_token": access_token.decode()}, 200
-        return {"Message": "Wrong password!"}, 401
 
 
 class UserLogout(Resource):
