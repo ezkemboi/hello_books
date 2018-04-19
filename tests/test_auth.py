@@ -3,9 +3,9 @@ The file contains the for user functions including register, login, logout, rese
 """
 import unittest
 import json
-from app import app
 
-
+from app import create_app
+from app.models import db
 import run
 
 
@@ -15,7 +15,7 @@ class AuthTestCase(unittest.TestCase):
     """
     def setUp(self):
         """Initialize the application for testing"""
-        self.app = app
+        self.app = create_app(config_name='testing')
         self.client = run.app.test_client()
         self.user_data = {
             'email': "myemail@gmail.com",
@@ -27,6 +27,17 @@ class AuthTestCase(unittest.TestCase):
             'username': "",
             'password': ""
         }
+
+        with self.app.app_context():
+            # Create all tables
+            db.create_all()
+
+    def tearDown(self):
+        """Tear down all initialized variables"""
+        with self.app.app_context():
+            # Drop all tables
+            db.session.remove()
+            db.drop_all()
 
     def register(self):
         """This method registers a user"""

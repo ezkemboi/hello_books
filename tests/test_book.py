@@ -5,8 +5,8 @@ import unittest
 import json
 
 import run
-from app import app
-import app.models
+from app import create_app
+from app.models import db
 
 
 class UsersTestCase(unittest.TestCase):
@@ -14,7 +14,7 @@ class UsersTestCase(unittest.TestCase):
 
     def setUp(self):
         """This set environment and initialize application"""
-        self.app = app
+        self.app = create_app(config_name='testing')
         self.client = run.app.test_client()
         self.add_book_data = {
             "book_id": 2345,
@@ -22,6 +22,17 @@ class UsersTestCase(unittest.TestCase):
             'authors': 'john doe',
             'year': 2006,
         }
+
+        with self.app.app_context():
+            # Create all tables
+            db.create_all()
+
+    def tearDown(self):
+        """Tear down all initialized variables"""
+        with self.app.app_context():
+            # Drop all tables
+            db.session.remove()
+            db.drop_all()
 
     def add_book(self):
         """The function help to add book"""
