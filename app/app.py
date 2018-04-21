@@ -2,7 +2,7 @@
 This file holds all the resources for user from registration to borrow books and return books
 """
 import re
-from flask import Flask, session, render_template
+from flask import Flask, session
 from flask_restful import Resource, Api, reqparse
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token,\
     get_jwt_identity
@@ -34,12 +34,6 @@ add_book_parser.add_argument('year', type=int, help='Please enter the year publi
 
 edit_book_parser = add_book_parser.copy()
 delete_book_parser = reqparse.RequestParser()
-
-
-@app.route('/')
-def index():
-    """It holds the homepage url and renders the generated html doc for api documentation"""
-    return render_template('docs.html')
 
 
 class UserRegistration(Resource):
