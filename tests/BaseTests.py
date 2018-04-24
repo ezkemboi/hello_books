@@ -38,11 +38,13 @@ class HelloBooksTestCase(unittest.TestCase):
             'book_title': "The Wonder Boy",
             'authors': "john doe",
             'year': "2006",
+            'copies': "2"
         }
         self.edit_book_data = {
             'book_title': "The wonder Boy edited version",
             'authors': "john Jack",
             'year': "2007",
+            'copies': "12"
         }
 
         with self.app.app_context():
@@ -51,7 +53,7 @@ class HelloBooksTestCase(unittest.TestCase):
                         email=self.user_data['email'], password=self.user_data['password'])
             book = Book(book_id=self.add_book_data['book_id'], authors=self.add_book_data['authors'],
                         book_title=self.add_book_data['book_title'],
-                        year=self.add_book_data['year'])
+                        year=self.add_book_data['year'], copies=self.add_book_data['copies'])
             db.session.add(user)
             db.session.add(book)
             db.session.commit()
@@ -77,18 +79,7 @@ class HelloBooksTestCase(unittest.TestCase):
         """Authenticate user by generating token"""
         self.register()
         login = self.login()
-        token = json.loads(login.data.decode())
-        header = {
-            'Authorization': token,
-            "content_type": "application/json"
-        }
-        return header
-
-    def add_book(self):
-        """This method adds a book"""
-        access_token = self.authenticate_user()
-        return self.client.post('/api/v1/books', headers=access_token,
-                                data=json.dumps(self.add_book_data), content_type='application/json')
+        return login
 
 if __name__ == '__main__':
     unittest.main()
