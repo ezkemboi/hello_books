@@ -7,7 +7,7 @@ from functools import wraps
 from flask_restful import Resource, reqparse
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
-from .models import User, Book, Borrow, UserBorrowHistory, BlacklistToken
+from .models import User, Book, Borrow, BlacklistToken
 from app import app
 
 # Define all parsers for all classes
@@ -24,9 +24,14 @@ add_book_parser = reqparse.RequestParser()
 add_book_parser.add_argument('book_title', type=str, help='Please enter the book title', required=True)
 add_book_parser.add_argument('authors', type=str, help='Please enter the authors name', required=True)
 add_book_parser.add_argument('year', type=int, help='Please enter the year published')
+add_book_parser.add_argument('copies', type=int, help='Enter no of copies')
 
 edit_book_parser = add_book_parser.copy()
 delete_book_parser = reqparse.RequestParser()
+
+get_parser = reqparse.RequestParser()
+get_parser.add_argument('page', type=int, help="Please enter page", default=1)
+get_parser.add_argument('limit', type=int, help="Please enter page limit", default=5)
 
 
 def token_required(function):
@@ -39,12 +44,12 @@ def token_required(function):
         if auth_header:
             token = auth_header
         if not token:
-            return {"Error": "Token is missing. Please provide a valid token"}, 401
+            return {"Message": "Token is missing. Please provide a valid token"}, 401
         try:
             response = User.decode_token(token)
             current_user = User.query.filter_by(user_id=response).first()
         except Exception:
-            return {"Error": "please login again"}, 401
+            return {"Message": "Expired token, please login in again"}, 401
         return function(current_user, *args, **kwargs)
     return wrapper
 
@@ -128,13 +133,13 @@ class UserLogout(Resource):
                         return {"Error": "Internal server error"}, 500
 
             return {"Message": "No valid token found"}, 401
-        return {"Error": "Internal server error"}, 500
 
 
 class ResetPassword(Resource):
     """
         It holds user reset password functionality
     """
+
     def post(self):
         """The method allow user to reset password"""
         args = reset_password_parser.parse_args()
@@ -143,10 +148,10 @@ class ResetPassword(Resource):
         if not reset_user:
             return {"Message": "The email does not exist."}, 404
         password = args['password']
+        hashed_password = generate_password_hash(password, method='sha256')
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
         if not password_length:
             return {"Message": "Password is short!"}, 400
-        hashed_password = generate_password_hash(reset_user.password, method='sha256')
         reset_user.password = hashed_password
         reset_user.update_user()
         return {"Message": "Password is reset successfully."}, 200
@@ -160,27 +165,50 @@ class AddBook(Resource):
     def post(self, current_user):
         """Post method to allow addition of book"""
         args = add_book_parser.parse_args()
-        book_id = random.randint(1111, 9999)
+        # book_id = random.randint(1111, 9999)
         book_title = args['book_title']
         authors = args['authors']
         year = args['year']
-        existing_id = Book.query.filter_by(book_id=book_id).first()
+        copies = args['copies']
+        # existing_id = Book.query.filter_by(book_id=book_id).first()
         if not book_title or not authors:
             return {"Message": "Please fill all the details."}, 400
-        if existing_id:
-            return {"Message": "A book with that id already exist."}, 400
-        new_book = Book(book_id=book_id, book_title=book_title, authors=authors, year=year)
-        new_book.save_book()
-        result = new_book.book_serializer()
-        return {"Message": "The book was added successfully.", "Book Added": result}, 201
+        # if existing_id:
+        #     return {"Message": "A book with that id already exist."}, 400
+        book_copies = 0
+        while book_copies < copies:
+            book_copies += 1
+            new_book = Book(book_id=random.randint(1111, 9999), book_title=book_title, authors=authors,
+                            year=year, copies=book_copies)
+            new_book.save_book()
+            result = new_book.book_serializer()
+            return {"Message": "The book was added successfully.", "Book Added": result}, 201
 
     def get(self):
         """Get method to get all books"""
-        books = Book.query.all()
-        if not books:
+        args = get_parser.parse_args()
+        page = args['page']
+        limit = args['limit']
+        books = Book.query.paginate(page=page, per_page=limit)
+        all_books = books.items
+        num_results = books.total
+        total_pages = books.pages
+        current_page = books.page
+        has_next_page = books.has_next
+        has_prev_page = books.has_prev
+        prev_num = books.prev_num
+        next_num = books.next_num
+        if not all_books:
             return {"Message": "Books not found"}, 404
-        results = [book.book_serializer() for book in books]
-        return {"Books": results}, 200
+        results = [book.book_serializer() for book in all_books]
+        return {
+            "Total results": num_results,
+            "Total Pages": total_pages,
+            "Current page": current_page,
+            "All books": results,
+            "Previous page": prev_num,
+            "Next page": next_num
+               }, 200
 
 
 class SingleBook(Resource):
@@ -198,7 +226,9 @@ class SingleBook(Resource):
         book_title = args['book_title']
         authors = args['authors']
         year = args['year']
-        if get_book and get_book.book_id == book_id:
+        if not get_book:
+            return {"The book is not found"}, 404
+        if get_book:
             get_book.book_title = book_title
             get_book.authors = authors
             get_book.year = year
@@ -233,19 +263,24 @@ class BorrowBook(Resource):
     def post(self, current_user, book_id):
         """Post method for user to borrow book"""
         available_book = Book.query.filter_by(book_id=book_id).first()
+        returned = False
         if available_book:
             borrow_book = Borrow(borrow_id=random.randint(1111, 9999),
-                                 book_id=book_id, user_id=current_user.user_id)
+                                 book_id=book_id, user_id=current_user.user_id, returned=returned)
             borrow_book.save_borrowed_book()
             result = borrow_book.borrow_serializer()
-            return {"Book borrowed": result}, 202
+            return {"Book borrowed": result}, 200
+        return {"Message": "The book with that id is not found"}, 404
 
     def put(self, current_user, book_id):
         """Put method to allow user return book"""
-        return_book = Borrow.query.filter_by(book_id=book_id).first()
+        return_book = Borrow.query.filter_by(book_id=book_id, returned=False).first()
         if return_book:
-            Borrow.return_borrowed_book(book_id)
-            return {"Message": "You have returned the book successfully."}, 202
+            return_book.user_id = current_user.user_id
+            return_book.returned = True
+            return_book.return_borrowed_book()
+            return {"Message": "You have returned the book successfully."}, 200
+        return {"Message": "Your trying to return unidentified book"}, 400
 
 
 class BorrowHistory(Resource):
@@ -254,14 +289,34 @@ class BorrowHistory(Resource):
     """
     method_decorators = [token_required]
 
-    def get(self, current_user, user_id):
+    def get(self, current_user):
         """It returns the users borrowing history"""
-        all_borrowed_books = Borrow.query.filter_by(user_id=user_id)
+        args = get_parser.parse_args()
+        page = args['page']
+        limit = args['limit']
+        all_borrowed_books = Borrow.query.filter_by(
+            user_id=current_user.user_id).paginate(
+            page=page, per_page=limit)
+        all_borrowed = all_borrowed_books.items
+        num_results = all_borrowed_books.total
+        num_pages = all_borrowed_books.pages
+        current_page = all_borrowed_books.page
+        has_next_page = all_borrowed_books.has_next
+        has_prev_page = all_borrowed_books.has_prev
+        prev_num = all_borrowed_books.prev_num
+        next_num = all_borrowed_books.next_num
         if not all_borrowed_books:
             return {"Message": "You have not borrowed any book."}, 404
         results = [user_borrows.borrow_serializer()
-                   for user_borrows in all_borrowed_books]
-        return {"Borrowing history list": results}
+                   for user_borrows in all_borrowed]
+        return {
+            "Total results": num_results,
+            "Number of pages": num_pages,
+            "Current page": current_page,
+            "All borrowed books": results,
+            "Previous page": prev_num,
+            "Next page": next_num
+               }, 200
 
 
 class UnReturnedBooks(Resource):
@@ -270,4 +325,27 @@ class UnReturnedBooks(Resource):
 
     def get(self, current_user):
         """User history of books not yet returned"""
-        pass
+        args = get_parser.parse_args()
+        page = args['page']
+        limit = args['limit']
+        un_returned_books = Borrow.query.filter_by(returned=False).\
+            paginate(page=page, per_page=limit)
+        total_un_returned = un_returned_books.items
+        num_results = un_returned_books.total
+        num_pages = un_returned_books.pages
+        current_page = un_returned_books.page
+        has_next_page = un_returned_books.has_next
+        has_prev_page = un_returned_books.has_prev
+        prev_num = un_returned_books.prev_num
+        next_num = un_returned_books.next_num
+        if not un_returned_books:
+            return {"Message": "You do not have books that are un-returned"}, 404
+        results = [user_unreturn.borrow_serializer() for user_unreturn in total_un_returned]
+        return {
+            "Total unreturned books": num_results,
+            "Total pages": num_pages,
+            "Current page": current_page,
+            "Unreturned books": results,
+            "Previous page": prev_num,
+            "Next page": next_num
+               }, 200

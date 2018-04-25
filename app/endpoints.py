@@ -12,5 +12,5 @@ api.add_resource(AddBook, '/books/')
 api.add_resource(SingleBook, '/books/<book_id>/')
 
 api.add_resource(BorrowBook, '/users/books/<book_id>/')
-api.add_resource(BorrowHistory, '/users/books/<user_id>')
-api.add_resource(UnReturnedBooks, '/users/books?returned=false/')
+api.add_resource(BorrowHistory, '/users/books/')
+api.add_resource(UnReturnedBooks, '/users/books?returned=false')

@@ -84,19 +84,20 @@ class Book(db.Model):
 
     __tablename__ = 'books'
 
-    book_id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, primary_key=True, unique=True)
     book_title = db.Column(db.String)
     authors = db.Column(db.String)
     year = db.Column(db.String)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.user_id))
+    copies = db.Column(db.Integer)
     borrows = db.relationship('Borrow', backref='book', lazy='dynamic')
 
-    def __init__(self, book_id, book_title, authors, year):
+    def __init__(self, book_id, book_title, authors, year, copies):
         """This method initializes book details"""
         self.book_id = book_id
         self.book_title = book_title
         self.authors = authors
         self.year = year
+        self.copies = copies
 
     def __repr__(self):
         """Represent object instance on query"""
@@ -108,7 +109,8 @@ class Book(db.Model):
             'book_id': self.book_id,
             'book_title': self.book_title,
             'authors': self.authors,
-            'year': self.year
+            'year': self.year,
+            'copies': self.copies
         }
         return book_details
 
@@ -131,16 +133,17 @@ class Borrow(db.Model):
     """Class holding the models for borrow and history"""
     __tablename__ = 'borrows'
 
-    borrow_id = db.Column(db.Integer, primary_key=True)
+    borrow_id = db.Column(db.Integer, primary_key=True, unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.user_id))
     book_id = db.Column(db.Integer, db.ForeignKey(Book.book_id))
-    histories = db.relationship('UserBorrowHistory', backref='borrow', lazy='dynamic')
+    returned = db.Column(db.Boolean)
 
-    def __init__(self, borrow_id, user_id, book_id):
+    def __init__(self, borrow_id, user_id, book_id, returned):
         """Initialize borrow details"""
         self.borrow_id = borrow_id
         self.user_id = user_id
         self.book_id = book_id
+        self.returned = returned
 
     def __repr__(self):
         """Represent object instance on query"""
@@ -152,6 +155,7 @@ class Borrow(db.Model):
             'borrow_id': self.borrow_id,
             'book_id': self.book_id,
             'user_id': self.user_id,
+            'returned': self.returned
         }
         return borrow_details
 
@@ -161,47 +165,7 @@ class Borrow(db.Model):
         db.session.commit()
 
     def return_borrowed_book(self):
-        """Method to allow user return book borrowed"""
-        db.session.delete(self)
-        db.commit()
-
-
-class UserBorrowHistory(db.Model):
-    """Holds the history of the past books borrowed by user"""
-
-    __tablename__ = 'histories'
-
-    borrow_id = db.Column(db.Integer, db.ForeignKey('borrows.borrow_id'), primary_key=True)
-    book_id = db.Column(db.Integer, db.ForeignKey(Book.book_id))
-    user_id = db.Column(db.Integer, db.ForeignKey(User.user_id))
-    return_status = db.Column(db.Boolean, default=False)
-
-    def __init__(self, borrow_id, book_id):
-        """Initialize the user history borrowing list"""
-        self.borrow_id = borrow_id
-        self.book_id = book_id
-
-    def __repr__(self):
-        """Represent object instance on query"""
-        return "<Borrow_id {}>".format(self.borrow_id)
-
-    def borrowing_history_serializer(self):
-        """Make a serializer for borrow history for user"""
-        borrow_history_details = {
-            'borrow_id': self.borrow_id,
-            'book_id': self.book_id
-        }
-        return borrow_history_details
-
-    def save_borrow_history(self):
-        """Save books borrowed by the user"""
-        db.session.save(self)
         db.session.commit()
-
-    # @staticmethod
-    # def get_books_not_yet_returned():
-    #     return UserBorrowHistory.query.filter(
-    #         UserBorrowHistory.return_status.is_(False)).all()
 
 
 class BlacklistToken(db.Model):
