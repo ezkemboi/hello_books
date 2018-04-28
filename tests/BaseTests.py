@@ -4,7 +4,7 @@ import json
 
 from app import app, db
 from app.endpoints import api
-from app.models import User, Borrow, Book
+from app.models import User, Borrow, Book, BlacklistToken
 from config import app_config
 
 
@@ -20,6 +20,48 @@ class HelloBooksTestCase(unittest.TestCase):
             'email': "myemail@gmail.com",
             'username': "testuser",
             'password': "passwordtrade"
+        }
+        self.short_reset_psw = {
+            'user_id': random.randint(1111, 9999),
+            'email': "myemail@gmail.com",
+            'username': "testuser",
+            'password': "short"
+        }
+        self.empty_email_on_reset = {
+            'user_id': random.randint(1111, 9999),
+            'email': "",
+            'username': "testuser",
+            'password': "validpassword"
+        }
+        self.user_data_1 = {
+            'user_id': random.randint(1111, 9999),
+            'username': 'user1',
+            'email': 'user1@gmail.com',
+            'password': 'user1password'
+        }
+        self.empty_data = {
+            'user_id': random.randint(1111, 9999),
+            'username': '',
+            'email': '',
+            'password': ''
+        }
+        self.invalid_email = {
+            'user_id': random.randint(1111, 9999),
+            'username': 'user',
+            'email': 'invalid@email',
+            'password': 'password'
+        }
+        self.invalid_username = {
+            'user_id': random.randint(1111, 9999),
+            'username': 'use',
+            'email': 'user1@gmail.com',
+            'password': 'user1password'
+        }
+        self.short_password = {
+            'user_id': random.randint(1111, 9999),
+            'username': 'user2',
+            'email': 'user2@gmail.com',
+            'password': 'user1'
         }
         self.invalid_user_data = {
             'user_id': random.randint(1111, 9999),
@@ -79,7 +121,9 @@ class HelloBooksTestCase(unittest.TestCase):
         """Authenticate user by generating token"""
         self.register()
         login = self.login()
-        return login
+        access_token = json.loads(login.data.decode())['Access_token']
+        return access_token
+
 
 if __name__ == '__main__':
     unittest.main()

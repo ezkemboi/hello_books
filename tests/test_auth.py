@@ -13,10 +13,12 @@ class AuthTestCase(HelloBooksTestCase):
 
     def test_registration(self):
         """Test user registration"""
-        register = self.register()
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data_1),
+                                    content_type='application/json')
         self.assertEqual(register.status_code, 201)
-        register = self.client.post('/api/v1/auth/register')
-        self.assertEqual(register.status_code, 400)
+        empty_registration = self.client.post('/api/v1/auth/register', data=json.dumps(self.empty_data),
+                                              content_type='application/json')
+        self.assertEqual(empty_registration.status_code, 400)
 
     def test_already_taken_username(self):
         """This tests that username is already taken"""
@@ -36,11 +38,12 @@ class AuthTestCase(HelloBooksTestCase):
         self.register()
         login_res = self.login()
         self.assertEqual(login_res.status_code, 200)
-        empty_login = self.client.post('/api/v1/auth/login')
-        self.assertEqual(empty_login.status_code, 400)
         invalid_login = self.client.post('/api/v1/auth/login', data=json.dumps(self.invalid_user_data),
                                          content_type='application/json')
         self.assertEqual(invalid_login.status_code, 403)
+        empty_login_data = self.client.post('/api/v1/auth/login', data=json.dumps(self.empty_data),
+                                            content_type='application/json')
+        self.assertEqual(empty_login_data.status_code, 400)
 
     def test_reset_password(self):
         """"Test reset-password"""
@@ -48,9 +51,35 @@ class AuthTestCase(HelloBooksTestCase):
         res = self.client.post('/api/v1/auth/reset-password', data=json.dumps(self.user_data),
                                content_type='application/json')
         self.assertEqual(res.status_code, 200)
+        wrong_reset_email = self.client.post('/api/v1/auth/reset-password', data=json.dumps(self.user_data_1),
+                                             content_type='application/json')
+        self.assertEqual(wrong_reset_email.status_code, 404)
+        short_reset_psw = self.client.post('/api/v1/auth/reset-password', data=json.dumps(self.short_reset_psw),
+                                           content_type='application/json')
+        self.assertEqual(short_reset_psw.status_code, 400)
 
-    def test_logout(self):
-        """Test"""
-        self.authenticate_user()
-        logout_user = self.client.post('/api/v1/auth/logout')
-        self.assertEqual(logout_user.status_code, 200)
+    def test_invalid_email_on_register(self):
+        """Test user providing an invalid email"""
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.invalid_email),
+                                    content_type='application/json')
+        self.assertEqual(register.status_code, 400)
+
+    def test_invalid_username_on_register(self):
+        """Test user providing short username"""
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.invalid_username),
+                                    content_type='application/json')
+        self.assertEqual(register.status_code, 400)
+
+    def test_short_password_on_register(self):
+        """Test short password"""
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.short_password),
+                                    content_type='application/json')
+        self.assertEqual(register.status_code, 400)
+
+    # def test_logout(self):
+    #     """Test"""
+    #     logout_user = self.client.post('/api/v1/auth/logout', {'Authorization': 'Bearer ' +
+    #                                                                             self.authenticate_user(), },
+    #                                    content_type='application/json')
+    #     res = json.loads(logout_user.data.decode())
+    #     self.assertEqual(logout_user.status_code, 200)
