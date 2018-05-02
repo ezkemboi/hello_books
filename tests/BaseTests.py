@@ -88,6 +88,13 @@ class HelloBooksTestCase(unittest.TestCase):
             'year': "2007",
             'copies': "12"
         }
+        self.missing_book_data = {
+            'book_id': random.randint(1111, 9999),
+            'book_title': "",
+            'authors': "",
+            'year': "2006",
+            'copies': "2"
+        }
 
         with self.app.app_context():
             db.create_all()

@@ -9,11 +9,12 @@ from tests.BaseTests import HelloBooksTestCase
 class BooksTestCase(HelloBooksTestCase):
     """This class contains all tests for users"""
 
-    # def test_add_book(self):
-    #     """Test that admin should add book"""
-    #     self.authenticate_user()
-    #     add_book = self.add_book()
-    #     self.assertEqual(add_book.status_code, 201)
+    def test_get_book_missing_all_details(self):
+        """Test that admin should add book"""
+        self.register()
+        self.login()
+        add_book = self.client.get('/api/v1/books', data=self.missing_book_data, content_type='application/json')
+        self.assertEqual(add_book.status_code, 400)
 
     def test_get_all_books(self):
         """Test user can get all books"""
