@@ -111,8 +111,6 @@ class UserLogout(Resource):
                     except Exception:
                         return {"Error": "Internal server error"}, 500
 
-            return {"Message": "No valid token found"}, 401
-
 
 class ResetPassword(Resource):
     """
