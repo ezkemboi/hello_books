@@ -77,9 +77,15 @@ class AuthTestCase(HelloBooksTestCase):
         self.assertEqual(register.status_code, 400)
 
     def test_missing_token_logout(self):
-        """Test"""
+        """Test logout user without token"""
         self.register()
         login = self.login()
         logout_user = self.client.post('/api/v1/auth/logout', data=json.dumps(self.user_data),
                                        content_type='application/json')
         self.assertEqual(logout_user.status_code, 401)
+
+    # def test_logout(self):
+    #     self.register()
+    #     login = self.login()
+    #     logout = self.client.post('/api/v1/auth/logout', content_type='application/json')
+    #     self.assertEqual(logout.status_code, 200)

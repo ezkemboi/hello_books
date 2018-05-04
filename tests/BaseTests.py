@@ -21,6 +21,12 @@ class HelloBooksTestCase(unittest.TestCase):
             'username': "testuser",
             'password': "passwordtrade"
         }
+        self.admin_data = {
+            'user_id': random.randint(1111, 9999),
+            'email': "admin@hellobookslibrary.com",
+            'username': "admin",
+            'password': "adminpassword"
+        }
         self.short_reset_psw = {
             'user_id': random.randint(1111, 9999),
             'email': "myemail@gmail.com",
@@ -103,8 +109,11 @@ class HelloBooksTestCase(unittest.TestCase):
             book = Book(book_id=self.add_book_data['book_id'], authors=self.add_book_data['authors'],
                         book_title=self.add_book_data['book_title'],
                         year=self.add_book_data['year'], copies=self.add_book_data['copies'])
+            admin = User(user_id=self.admin_data['user_id'], username=self.admin_data['username'],
+                         email=self.admin_data['email'], password=self.admin_data['password'])
             db.session.add(user)
             db.session.add(book)
+            db.session.add(admin)
             db.session.commit()
 
     def tearDown(self):
