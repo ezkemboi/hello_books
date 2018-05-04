@@ -1,61 +1,36 @@
 """
 The file contains the for user functions including register, login, logout, reset-password and logout
 """
-import unittest
 import json
-from app import app
+
+from tests.BaseTests import HelloBooksTestCase
 
 
-import run
-
-
-class AuthTestCase(unittest.TestCase):
+class AuthTestCase(HelloBooksTestCase):
     """
     Auth test cases for register, login, logout and reset-password
     """
-    def setUp(self):
-        """Initialize the application for testing"""
-        self.app = app
-        self.client = run.app.test_client()
-        self.user_data = {
-            'email': "myemail@gmail.com",
-            'username': "testuser",
-            'password': "passwordtrade"
-        }
-        self.empty_user_data = {
-            'email': "",
-            'username': "",
-            'password': ""
-        }
-
-    def register(self):
-        """This method registers a user"""
-        return self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data),
-                                content_type='application/json')
-
-    def login(self):
-        return self.client.post('/api/v1/auth/login', data=json.dumps(self.user_data),
-                                content_type='application/json')
-
-    def empty_login(self):
-        return self.client.post('/api/v1/auth/login', data=json.dumps(self.empty_user_data),
-                                content_type='application/json')
 
     def test_registration(self):
         """Test user registration"""
-        register = self.register()
-        self.assertTrue(register, 201)
-
-    def test_empty_registration(self):
-        """Test user providing empty data"""
-        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.empty_user_data),
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data_1),
                                     content_type='application/json')
-        self.assertEqual(register.status_code, 400)
+        self.assertEqual(register.status_code, 201)
+        empty_registration = self.client.post('/api/v1/auth/register', data=json.dumps(self.empty_data),
+                                              content_type='application/json')
+        self.assertEqual(empty_registration.status_code, 400)
 
-    def test_already_registered(self):
-        """This test code helps to eliminate double registration"""
+    def test_already_taken_username(self):
+        """This tests that username is already taken"""
         self.register()
         second_res = self.register()
+        self.assertEqual(second_res.status_code, 409)
+
+    def test_already_registered_user(self):
+        """This test code helps to eliminate double registration"""
+        self.register()
+        second_res = self.client.post('/api/v1/auth/register', data=json.dumps(self.similar_user_email),
+                                      content_type='application/json')
         self.assertEqual(second_res.status_code, 422)
 
     def test_login(self):
@@ -63,7 +38,12 @@ class AuthTestCase(unittest.TestCase):
         self.register()
         login_res = self.login()
         self.assertEqual(login_res.status_code, 200)
-        self.assertNotEqual(login_res.status_code, 403)
+        invalid_login = self.client.post('/api/v1/auth/login', data=json.dumps(self.invalid_user_data),
+                                         content_type='application/json')
+        self.assertEqual(invalid_login.status_code, 403)
+        empty_login_data = self.client.post('/api/v1/auth/login', data=json.dumps(self.empty_data),
+                                            content_type='application/json')
+        self.assertEqual(empty_login_data.status_code, 400)
 
     def test_reset_password(self):
         """"Test reset-password"""
@@ -71,19 +51,41 @@ class AuthTestCase(unittest.TestCase):
         res = self.client.post('/api/v1/auth/reset-password', data=json.dumps(self.user_data),
                                content_type='application/json')
         self.assertEqual(res.status_code, 200)
+        wrong_reset_email = self.client.post('/api/v1/auth/reset-password', data=json.dumps(self.user_data_1),
+                                             content_type='application/json')
+        self.assertEqual(wrong_reset_email.status_code, 404)
+        short_reset_psw = self.client.post('/api/v1/auth/reset-password', data=json.dumps(self.short_reset_psw),
+                                           content_type='application/json')
+        self.assertEqual(short_reset_psw.status_code, 400)
 
-    def test_logout(self):
-        """Test for logout already logged in"""
+    def test_invalid_email_on_register(self):
+        """Test user providing an invalid email"""
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.invalid_email),
+                                    content_type='application/json')
+        self.assertEqual(register.status_code, 400)
+
+    def test_invalid_username_on_register(self):
+        """Test user providing short username"""
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.invalid_username),
+                                    content_type='application/json')
+        self.assertEqual(register.status_code, 400)
+
+    def test_short_password_on_register(self):
+        """Test short password"""
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.short_password),
+                                    content_type='application/json')
+        self.assertEqual(register.status_code, 400)
+
+    def test_missing_token_logout(self):
+        """Test logout user without token"""
         self.register()
-        self.login()
+        login = self.login()
         logout_user = self.client.post('/api/v1/auth/logout', data=json.dumps(self.user_data),
                                        content_type='application/json')
-        self.assertEqual(logout_user.status_code, 200)
+        self.assertEqual(logout_user.status_code, 401)
 
-    def test_empty_login(self):
-        self.register()
-        empty_login = self.empty_login()
-        self.assertEqual(empty_login.status_code, 400)
-
-if __name__ == '__main__':
-    unittest.main()
+    # def test_logout(self):
+    #     self.register()
+    #     login = self.login()
+    #     logout = self.client.post('/api/v1/auth/logout', content_type='application/json')
+    #     self.assertEqual(logout.status_code, 200)
