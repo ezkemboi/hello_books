@@ -107,3 +107,6 @@ ENV/
 # ignore virtual env
 Pipfile
 pipfile.lock
+
+# Env
+hello_books/

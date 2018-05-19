@@ -1,9 +1,7 @@
 """
 The file contains all data models for the application
 """
-import jwt
 from datetime import datetime, timedelta
-from flask import current_app
 
 from app import db
 
@@ -14,9 +12,9 @@ class User(db.Model):
     """
     __tablename__ = 'users'
 
-    user_id = db.Column(db.Integer, primary_key=True, unique=True)
+    user_id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, unique=True, nullable=False)
-    username = db.Column(db.String, unique=True)
+    username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
     borrows = db.relationship('Borrow', backref='user', lazy='dynamic')
 
@@ -37,34 +35,6 @@ class User(db.Model):
 
     def update_user(self):
         db.session.commit()
-
-    def generate_token(self, user_id):
-        """Generate token for user authentication"""
-        try:
-            payload = {
-                'exp': datetime.utcnow() + timedelta(minutes=10),
-                'iat': datetime.utcnow(),
-                'sub': user_id
-            }
-            jwt_string = jwt.encode(
-                payload,
-                current_app.config.get('SECRET'),
-                algorithm='HS256'
-            )
-            return jwt_string
-        except Exception as e:
-            return str(e)
-
-    @staticmethod
-    def decode_token(token):
-        """Decode the generated token via the authorization header"""
-        try:
-            payload = jwt.decode(token, current_app.config.get('SECRET'))
-            return payload['sub']
-        except jwt.ExpiredSignatureError:
-            return "This token is expired. Please login to get new token"
-        except jwt.InvalidTokenError:
-            return "Invalid token. Please register or login"
 
 
 class Book(db.Model):
@@ -138,30 +108,21 @@ class Borrow(db.Model):
         db.session.commit()
 
 
-class BlacklistToken(db.Model):
+class RevokedToken(db.Model):
     """
     Create a table for blacklisted tokens
     """
-    __tablename__ = "blacklisted_tokens"
+    __tablename__ = "revoked_tokens"
 
     id = db.Column(db.Integer, primary_key=True)
-    token = db.column(db.String)
-    blacklisted = db.Column(db.DateTime, nullable=False)
+    jti = db.column(db.String(80))
 
-    def __init__(self, token):
-        """Initialize token blacklist"""
-        self.token = token
-        self.blacklisted = datetime.utcnow()
-
-    def save_token(self):
+    def add_token(self):
         """Save blacklisted token"""
         db.session.add(self)
         db.session.commit()
 
-    @staticmethod
-    def check_blacklisted(token):
-        blacklisted = BlacklistToken.query.filter_by(
-            token=str(token)).first()
-        if blacklisted:
-            return True
-        return False
+    @classmethod
+    def is_jti_blacklisted(cls, jti):
+        query = cls.query.filter_by(jti=jti).first()
+        return bool(query)

@@ -2,35 +2,15 @@
 This file holds all the resources for user from registration to borrow books and return books
 """
 import re
-from flask import render_template, request
-from functools import wraps
+from flask import render_template
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
 import random
 
-from .models import User, BlacklistToken
+from .models import User, RevokedToken
 from app import app
 from .parsers import login_parser, register_parser, reset_password_parser
-
-
-def token_required(function):
-    """This function require token to access routes"""
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        """Help get header token"""
-        token = ''
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            token = auth_header
-        if not token:
-            return {"Message": "Token is missing. Please provide a valid token"}, 401
-        try:
-            response = User.decode_token(token)
-            current_user = User.query.filter_by(user_id=response).first()
-        except Exception:
-            return {"Message": "Expired token, please login in again"}, 401
-        return function(current_user, *args, **kwargs)
-    return wrapper
 
 
 @app.route('/')
@@ -55,8 +35,8 @@ class UserRegistration(Resource):
         hashed_password = generate_password_hash(password, method='sha256')
         if not email or not username or not password:
             return {"Message": "Provide email, username and password!"}, 400
-        username = User.query.filter_by(username=username).first()
-        if username:
+        taken_username = User.query.filter_by(username=username).first()
+        if taken_username is not None:
             return {"Message": "The username is already taken!"}, 409
         if user:
             return {"Message": "The user is already registered."}, 422
@@ -86,30 +66,24 @@ class UserLogin(Resource):
         if not log_in_user:
             return {"Message": "Invalid email!"}, 403
         if check_password_hash(log_in_user.password, password):
-            access_token = log_in_user.generate_token(log_in_user.user_id)
-            if access_token:
-                return {'Message': "Successfully logged in.", "Access_token": access_token.decode()}, 200
+            access_token = create_access_token(identity=log_in_user.user_id)
+            return {'Message': "Successfully logged in.", "access_token": access_token}, 200
 
 
 class UserLogout(Resource):
     """
         It holds user logout functionality
     """
-    @token_required
-    def post(self, current_user):
+    @jwt_required
+    def post(self):
         """Post Method to logout user"""
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            token = auth_header
-            if token:
-                response = User.decode_token(token)
-                if not isinstance(response, str):
-                    blacklisted_token = BlacklistToken(token=token)
-                    try:
-                        blacklisted_token.save_token()
-                        return {"Message": "Your logged out."}, 200
-                    except Exception:
-                        return {"Error": "Internal server error"}, 500
+        jti = get_raw_jwt()['jti']
+        try:
+            revoked_token = RevokedToken(jti=jti)
+            revoked_token.add_token()
+            return {"Message": "You are logged out."}, 200
+        except:
+            return {"Message": "Something went wrong."}, 500
 
 
 class ResetPassword(Resource):

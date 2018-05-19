@@ -1,8 +1,8 @@
 from flask_restful import Resource
+from flask_jwt_extended import jwt_required
 import random
 
 from .models import Book, User
-from .user import token_required
 from .parsers import add_book_parser, get_parser, edit_book_parser
 
 
@@ -15,8 +15,8 @@ class AddBook(Resource):
     """
     Contains all the methods to add book, list all books
     """
-    @token_required
-    def post(self, current_user):
+    @jwt_required
+    def post(self):
         """Post method to allow addition of book"""
         args = add_book_parser.parse_args()
         book_title = args['book_title']
@@ -77,8 +77,8 @@ class SingleBook(Resource):
     """
     Contains all activities of a single book, including editing, getting and removing a book.
     """
-    @token_required
-    def put(self, current_user, book_id):
+    @jwt_required
+    def put(self, book_id):
         """Put method to edit already existing book"""
         args = edit_book_parser.parse_args()
         get_book = Book.query.filter_by(book_id=book_id).first()
@@ -100,8 +100,8 @@ class SingleBook(Resource):
             edited_book = get_book.book_serializer()
             return {"Success": edited_book}, 200
 
-    @token_required
-    def delete(self, current_user, book_id):
+    @jwt_required
+    def delete(self, book_id):
         """Delete method to delete a single book"""
         get_book_id = Book.query.filter_by(book_id=book_id).first()
         admin = check_admin()
