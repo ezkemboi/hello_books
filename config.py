@@ -32,7 +32,7 @@ class TestingConfig(Config):
     TESTING = True
     DEBUG = True
     SECRET = os.getenv('SECRET')
-    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:@localhost:5432/hello_books_test"
 
 
 class StagingConfig(Config):

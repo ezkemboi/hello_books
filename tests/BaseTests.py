@@ -3,8 +3,6 @@ import random
 import json
 
 from app import app, db
-from app.endpoints import api
-from app.models import User, Borrow, Book, BlacklistToken
 from config import app_config
 
 
@@ -15,6 +13,9 @@ class HelloBooksTestCase(unittest.TestCase):
         self.app = app
         app.config.from_object(app_config['testing'])
         self.client = self.app.test_client()
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
         self.user_data = {
             'user_id': random.randint(1111, 9999),
             'email': "myemail@gmail.com",
@@ -102,26 +103,11 @@ class HelloBooksTestCase(unittest.TestCase):
             'copies': "2"
         }
 
-        with self.app.app_context():
-            db.create_all()
-            user = User(user_id=self.user_data['user_id'], username=self.user_data['username'],
-                        email=self.user_data['email'], password=self.user_data['password'])
-            book = Book(book_id=self.add_book_data['book_id'], authors=self.add_book_data['authors'],
-                        book_title=self.add_book_data['book_title'],
-                        year=self.add_book_data['year'], copies=self.add_book_data['copies'])
-            admin = User(user_id=self.admin_data['user_id'], username=self.admin_data['username'],
-                         email=self.admin_data['email'], password=self.admin_data['password'])
-            db.session.add(user)
-            db.session.add(book)
-            db.session.add(admin)
-            db.session.commit()
-
     def tearDown(self):
         """Break all data tables created"""
-        with self.app.app_context():
-            db.session.remove()
-            db.drop_all()
-            db.session.commit()
+        db.session.close()
+        db.drop_all()
+        self.app_context.pop()
 
     def register(self):
         """This method registers a user"""
@@ -130,6 +116,7 @@ class HelloBooksTestCase(unittest.TestCase):
 
     def login(self):
         """This is a login user helper"""
+        self.register()
         return self.client.post('/api/v1/auth/login', data=json.dumps(self.user_data),
                                 content_type='application/json')
 
