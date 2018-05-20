@@ -12,6 +12,7 @@ class HelloBooksTestCase(unittest.TestCase):
         """It sets up the application and authentication of user"""
         self.app = app
         app.config.from_object(app_config['testing'])
+        self.BASE_URL = app_config['testing'].BASE_URL
         self.client = self.app.test_client()
         self.app_context = self.app.app_context()
         self.app_context.push()
@@ -111,13 +112,13 @@ class HelloBooksTestCase(unittest.TestCase):
 
     def register(self):
         """This method registers a user"""
-        return self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data),
+        return self.client.post('{}/api/v1/auth/register'.format(self.BASE_URL), data=json.dumps(self.user_data),
                                 content_type='application/json')
 
     def login(self):
         """This is a login user helper"""
         self.register()
-        return self.client.post('/api/v1/auth/login', data=json.dumps(self.user_data),
+        return self.client.post('{}/api/v1/auth/login'.format(self.BASE_URL), data=json.dumps(self.user_data),
                                 content_type='application/json')
 
     def authenticate_user(self):
