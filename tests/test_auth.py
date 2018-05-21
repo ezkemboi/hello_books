@@ -13,10 +13,10 @@ class AuthTestCase(HelloBooksTestCase):
 
     def test_registration(self):
         """Test user registration"""
-        register = self.client.post('{}api/v1/auth/register'.format(self.BASE_URL), data=json.dumps(self.user_data_1),
+        register = self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data_1),
                                     content_type='application/json')
         self.assertEqual(register.status_code, 201)
-        empty_registration = self.client.post('{}api/v1/auth/register'.format(self.BASE_URL), data=json.dumps(self.empty_data),
+        empty_registration = self.client.post('/api/v1/auth/register', data=json.dumps(self.empty_data),
                                               content_type='application/json')
         self.assertEqual(empty_registration.status_code, 400)
 
@@ -29,7 +29,7 @@ class AuthTestCase(HelloBooksTestCase):
     def test_already_registered_user(self):
         """This test code helps to eliminate double registration"""
         self.register()
-        second_res = self.client.post('{}api/v1/auth/register'.format(self.BASE_URL), data=json.dumps(self.similar_user_email),
+        second_res = self.client.post('/api/v1/auth/register', data=json.dumps(self.similar_user_email),
                                       content_type='application/json')
         self.assertEqual(second_res.status_code, 422)
 

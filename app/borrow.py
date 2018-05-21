@@ -4,8 +4,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import request
 import random
 
-from .models import Book, Borrow
-from .parsers import get_parser
+from app.models import Book, Borrow
+from app.parsers import get_parser
 
 
 @jwt_required

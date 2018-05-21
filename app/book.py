@@ -2,8 +2,8 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 import random
 
-from .models import Book, User
-from .parsers import add_book_parser, get_parser, edit_book_parser
+from app.models import Book, User
+from app.parsers import add_book_parser, get_parser, edit_book_parser
 
 
 def check_admin():
