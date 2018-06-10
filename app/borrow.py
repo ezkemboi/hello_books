@@ -29,7 +29,7 @@ class BorrowBook(Resource):
         if available_book.copies >= 1:
             books_borrowed = user_un_returned_books()
             if len(books_borrowed) > 3:
-                return {"Message": "You can borrow only up to 3 books."}
+                return {"Message": "You can borrow only up to 3 books."}, 403
             borrow_book = Borrow(borrow_id=random.randint(1111, 9999),
                                  book_id=book_id, user_id=get_jwt_identity(), returned=False,
                                  date_borrowed=date_borrowed, due_date=due_date)

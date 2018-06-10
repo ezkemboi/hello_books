@@ -4,6 +4,39 @@ The file contains all data models for the application
 from app import db
 
 
+class Borrow(db.Model):
+    """Association table of borrow. Store all books borrowed by user."""
+    ___tablename__ = 'borrows'
+
+    borrow_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String, db.ForeignKey('users.user_id'), primary_key=True)
+    book_id = db.Column(db.String, db.ForeignKey('books.book_id'), primary_key=True)
+    date_borrowed = db.Column(db.DateTime)
+    due_date = db.Column(db.DateTime)
+    return_time = db.Column(db.DateTime)
+    returned = db.Column(db.Boolean, nullable=False)
+    book = db.relationship("Book", backref="user_borrows")
+    user = db.relationship("User", backref="book_borrows")
+
+    def borrow_serializer(self):
+        """Serialize data for borrow"""
+        borrow_details = {
+            'Borrow Id': self.borrow_id,
+            'Book Id': self.book_id,
+            'User Id': self.user_id,
+            'Return Status': self.returned,
+        }
+        return borrow_details
+
+    def save_borrowed_book(self):
+        """Save a book borrowed by the user"""
+        db.session.add(self)
+        db.session.commit()
+
+    def return_borrowed_book(self):
+        db.session.commit()
+
+
 class User(db.Model):
     """
     Hold data for user
@@ -16,7 +49,7 @@ class User(db.Model):
     last_name = db.Column(db.String, nullable=False)
     username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
-    borrows = db.relationship('Borrow', backref='user', lazy='dynamic')
+    books = db.relationship('Book', secondary='borrow')
 
     def user_serializer(self):
         """Serialize the user data"""
@@ -46,21 +79,28 @@ class Book(db.Model):
 
     __tablename__ = 'books'
 
-    book_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    book_id = db.Column(db.Integer, primary_key=True)
     book_title = db.Column(db.String, nullable=False)
     authors = db.Column(db.String, nullable=False)
     year = db.Column(db.Integer, nullable=False)
+    isnb = db.Column(db.String)
+    city_published = db.column(db.String)
+    edition = db.column(db.Integer)
+    publisher = db.Column(db.String)
     copies = db.Column(db.Integer, nullable=False)
-    borrows = db.relationship('Borrow', backref='book', lazy='dynamic')
 
     def book_serializer(self):
         """This is a serialized book details stored in dict"""
         book_details = {
-            'book_id': self.book_id,
-            'book_title': self.book_title,
-            'authors': self.authors,
-            'year': self.year,
-            'copies': self.copies
+            'Book Id': self.book_id,
+            'Book Title': self.book_title,
+            'Authors': self.authors,
+            'Year': self.year,
+            'Book edition': self.edition,
+            'ISNB': self.isnb,
+            'Publisher': self.publisher,
+            'City Published': self.city_published,
+            'Copies': self.copies
         }
         return book_details
 
@@ -76,37 +116,6 @@ class Book(db.Model):
 
     def update_book(self):
         """Update a book edited by the admin"""
-        db.session.commit()
-
-
-class Borrow(db.Model):
-    """Class holding the models for borrow and history"""
-    __tablename__ = 'borrows'
-
-    borrow_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.user_id))
-    book_id = db.Column(db.Integer, db.ForeignKey(Book.book_id))
-    date_borrowed = db.Column(db.DateTime)
-    due_date = db.Column(db.DateTime)
-    return_time = db.Column(db.DateTime)
-    returned = db.Column(db.Boolean, nullable=False)
-
-    def borrow_serializer(self):
-        """Serialize data for borrow"""
-        borrow_details = {
-            'borrow_id': self.borrow_id,
-            'book_id': self.book_id,
-            'user_id': self.user_id,
-            'returned': self.returned,
-        }
-        return borrow_details
-
-    def save_borrowed_book(self):
-        """Save a book borrowed by the user"""
-        db.session.add(self)
-        db.session.commit()
-
-    def return_borrowed_book(self):
         db.session.commit()
 
 

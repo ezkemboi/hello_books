@@ -17,6 +17,10 @@ add_book_parser.add_argument('book_title', type=str, help='Please enter the book
 add_book_parser.add_argument('authors', type=str, help='Please enter the authors name', required=True)
 add_book_parser.add_argument('year', help='Please enter the year published')
 add_book_parser.add_argument('copies', type=int, help='Enter no of copies')
+add_book_parser.add_argument('city_published', type=str, help="Please enter the city book was published")
+add_book_parser.add_argument('isnb', type=str, help="Please enter book isnb")
+add_book_parser.add_argument('publisher', type=str, help="Please enter the book publisher")
+add_book_parser.add_argument('edition', type=int, help="Please enter the book edition")
 
 edit_book_parser = add_book_parser.copy()
 

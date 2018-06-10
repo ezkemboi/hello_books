@@ -11,6 +11,7 @@ import random
 from app.models import User, RevokedToken
 from app import app
 from app.parsers import login_parser, register_parser, reset_password_parser
+from run import jwt
 
 #
 # @app.route('/')
