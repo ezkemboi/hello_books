@@ -1,8 +1,6 @@
 """
 The file contains all data models for the application
 """
-from datetime import datetime, timedelta
-
 from app import db
 
 
@@ -14,6 +12,8 @@ class User(db.Model):
 
     user_id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, unique=True, nullable=False)
+    first_name = db.Column(db.String, nullable=False)
+    last_name = db.Column(db.String, nullable=False)
     username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
     borrows = db.relationship('Borrow', backref='user', lazy='dynamic')
@@ -21,10 +21,12 @@ class User(db.Model):
     def user_serializer(self):
         """Serialize the user data"""
         user_details = {
-            'user_id': self.user_id,
-            'email': self.email,
-            'username': self.username,
-            'password': self.password
+            'User Id': self.user_id,
+            'Email': self.email,
+            'First Name': self.first_name,
+            'Last Name': self.last_name,
+            'Username': self.username,
+            'Password': self.password
         }
         return user_details
 

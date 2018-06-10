@@ -26,6 +26,8 @@ class UserRegistration(Resource):
         """Post method for user registration"""
         args = register_parser.parse_args()
         email = args['email']
+        first_name = args['first_name']
+        last_name = args['last_name']
         username = args['username']
         password = args['password']
         user = User.query.filter_by(email=email).first()
@@ -33,8 +35,6 @@ class UserRegistration(Resource):
         valid_username = re.match("[A-Za-z0-9@#$%^&+=]{4,}", username.strip())
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
         hashed_password = generate_password_hash(password, method='sha256')
-        if not email or not username or not password:
-            return {"Message": "Provide email, username and password!"}, 400
         taken_username = User.query.filter_by(username=username).first()
         if taken_username is not None:
             return {"Message": "The username is already taken!"}, 409
@@ -47,8 +47,8 @@ class UserRegistration(Resource):
         elif not password_length:
             return {"Message": "Password is short!"}, 400
         else:
-            create_user = User(user_id=random.randint(1111, 9999), email=email, username=username,
-                               password=hashed_password)
+            create_user = User(user_id=random.randint(1111, 9999), email=email, first_name=first_name,
+                               last_name=last_name, username=username, password=hashed_password)
             create_user.save_user()
             return {"Message": "The User is successfully Registered."}, 201
 
@@ -60,8 +60,6 @@ class UserLogin(Resource):
         args = login_parser.parse_args()
         email = args['email']
         password = args['password']
-        if not email or not password:
-            return {"Message": "Fill all fields!"}, 400
         log_in_user = User.query.filter_by(email=email).first()
         if not log_in_user:
             return {"Message": "Invalid email!"}, 403

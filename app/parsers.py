@@ -6,7 +6,9 @@ login_parser.add_argument('email', type=str, help='Please enter the email', requ
 login_parser.add_argument('password', type=str, help='please enter the password', required=True)
 
 register_parser = login_parser.copy()
-register_parser.add_argument('username', type=str, help='Please enter the username', required=True)
+register_parser.add_argument('username', type=str, help='Please enter your username', required=True)
+register_parser.add_argument('first_name', type=str, help='Please enter your first name', required=True)
+register_parser.add_argument('last_name', type=str, help='Please enter your last name', required=True)
 
 reset_password_parser = login_parser.copy()
 
