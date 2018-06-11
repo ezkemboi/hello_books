@@ -11,8 +11,7 @@ from app.parsers import get_parser
 @jwt_required
 def user_un_returned_books():
     """Check list of books that user have not returned"""
-    return Borrow.query.filter(Borrow.returned == 'false',
-                               Borrow.user_id == get_jwt_identity()).all()
+    return Borrow.query.filter(Borrow.returned == 'false', Borrow.user_id == get_jwt_identity()).all()
 
 
 class BorrowBook(Resource):
@@ -23,9 +22,12 @@ class BorrowBook(Resource):
     def post(self, book_id):
         """Post method for user to borrow book"""
         available_book = Book.query.filter_by(book_id=book_id).first()
+        has_borrowed_book = Borrow.query.filter_by(book_id=book_id, user_id=get_jwt_identity()).first()
         date_borrowed = datetime.datetime.now()
         due_date = datetime.datetime.now() + datetime.timedelta(days=14)
         if available_book.copies >= 1:
+            if has_borrowed_book:
+                return {"Message": "You have borrowed this book previously and can't borrow until returned"}, 403
             books_borrowed = user_un_returned_books()
             if len(books_borrowed) > 3:
                 return {"Message": "You can borrow only up to 3 books."}, 403

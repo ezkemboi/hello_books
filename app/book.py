@@ -1,5 +1,5 @@
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 import random
 
 from app.models import Book, User, Borrow
@@ -8,7 +8,8 @@ from app.parsers import add_book_parser, get_parser, edit_book_parser
 
 def check_admin():
     """Check if user is an admin"""
-    return User.query.filter(User.email.endswith('@hellobookslibrary.com')).first()
+    return User.query.filter(User.email.endswith('@hellobookslibrary.com'),
+                             User.user_id == get_jwt_identity()).first()
 
 
 class AddBook(Resource):
@@ -33,9 +34,9 @@ class AddBook(Resource):
             return {"Message": "Only admin can add a book."}, 403
         check_if_available = Book.query.filter_by(book_title=book_title, authors=authors).first()
         if check_if_available is None:
-            new_book = Book(book_id=random.randint(1111, 9999), book_title=book_title, authors=authors,
-                            edition=edition, city_published=city_published, book_isnb=book_isnb, publisher=publisher,
-                            year=year, copies=copies)
+            new_book = Book(book_id=random.randint(1111, 9999), book_title=book_title,
+                            authors=authors, edition=edition, city_published=city_published,
+                            book_isnb=book_isnb, publisher=publisher, year=year, copies=copies)
             new_book.save_book()
             result = new_book.book_serializer()
             return {"Message": "The book was added successfully.", "Book Added": result}, 201

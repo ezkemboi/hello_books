@@ -5,10 +5,10 @@ import re
 # from flask import render_template
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt, get_jwt_identity
 import random
 
-from app.models import User, RevokedToken
+from app.models import User, RevokedToken, Borrow
 from app import app
 from app.parsers import login_parser, register_parser, reset_password_parser
 from run import jwt
