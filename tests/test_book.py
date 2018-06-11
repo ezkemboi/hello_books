@@ -22,11 +22,23 @@ class BooksTestCase(HelloBooksTestCase):
                                  content_type='application/json')
         return login
 
+    def add_book(self):
+        """Add book function for reuse"""
+        self.login_admin()
+        add_book = self.client.post('/api/v1/books', data=json.dumps(self.add_book_data),
+                                    content_type='application/json')
+        return add_book
+
+    def test_add_book(self):
+        """Add book by admin that already exist"""
+        add_book = self.add_book()
+        self.assertEqual(add_book.status_code, 200)
+
     def test_add_book_already_exist(self):
         """Add book by admin that already exist"""
-        self.login_admin()
-        add_book = self.client.get('/api/v1/books', data=json.dumps(self.add_book_data),
-                                   content_type='application/json')
+        self.add_book()
+        add_book = self.client.post('/api/v1/books', data=json.dumps(self.add_book_data),
+                                    content_type='application/json')
         self.assertEqual(add_book.status_code, 200)
 
     def test_add_book_no_token(self):
@@ -36,11 +48,11 @@ class BooksTestCase(HelloBooksTestCase):
                                     content_type='application/json')
         self.assertEqual(add_book.status_code, 401)
 
-    def test_get_book_missing_all_details(self):
+    def test_add_book_missing_all_details(self):
         """Test that admin should add book"""
         self.register()
         self.login()
-        add_book = self.client.get('/api/v1/books', data=self.missing_book_data, content_type='application/json')
+        add_book = self.client.post('/api/v1/books', data=self.missing_book_data, content_type='application/json')
         self.assertEqual(add_book.status_code, 400)
 
     def test_get_all_books(self):
@@ -67,9 +79,9 @@ class BooksTestCase(HelloBooksTestCase):
         delete_book = self.client.delete('/api/v1/books/9056')
         self.assertEqual(delete_book.status_code, 401)
 
-    # def test_book_can_be_deleted(self):
-    #     add_book = self.add_book()
-    #     self.assertEqual(add_book.status_code, 201)
-    #     json_result = json.loads(add_book.data.decode('utf-8').replace("'", "\""))
-    #     delete_book = self.client.delete('/api/v1/books{}'.format(json_result['book_id']))
-    #     self.assertEqual(delete_book.status_code, 204)
+    def test_book_can_be_deleted(self):
+        add_book = self.add_book()
+        self.assertEqual(add_book.status_code, 201)
+        json_result = json.loads(add_book.data.decode('utf-8').replace("'", "\""))
+        delete_book = self.client.delete('/api/v1/books{}'.format(json_result['book_id']))
+        self.assertEqual(delete_book.status_code, 204)

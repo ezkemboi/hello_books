@@ -1,8 +1,8 @@
 from app import api
 
-from .user import UserLogin, UserLogout, UserRegistration, ResetPassword
-from .book import AddBook, SingleBook
-from .borrow import BorrowHistory, BorrowBook
+from app.user import UserLogin, UserLogout, UserRegistration, ResetPassword
+from app.book import AddBook, SingleBook
+from app.borrow import BorrowHistory, BorrowBook
 
 # The registration of all endpoints
 api.add_resource(UserRegistration, '/auth/register/')

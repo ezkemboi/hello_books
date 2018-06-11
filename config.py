@@ -12,16 +12,18 @@ class Config(object):
     CSRF_ENABLED = True
     TESTING = False
     SECRET = os.getenv('SECRET')
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:@localhost:5432/hellobooks"
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
 
 class DevelopmentConfig(Config):
     """
     Only development configurations goes here.
     """
+
+    print("the db is ", os.getenv('DATABASE_URL'))
     DEBUG = True
     SECRET = os.getenv('SECRET')
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:@localhost:5432/hellobooks"
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
@@ -32,7 +34,7 @@ class TestingConfig(Config):
     TESTING = True
     DEBUG = True
     SECRET = os.getenv('SECRET')
-    SQLALCHEMY_DATABASE_URI = "postgresql://postgres:@localhost:5432/hello_books_test"
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL_TEST')
 
 
 class StagingConfig(Config):
@@ -48,6 +50,7 @@ class ProductionConfig(Config):
     """
     DEBUG = False
     TESTING = False
+
 
 app_config = {
     'development': DevelopmentConfig,

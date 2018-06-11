@@ -1,11 +1,41 @@
 """
 The file contains all data models for the application
 """
-import jwt
-from datetime import datetime, timedelta
-from flask import current_app
-
 from app import db
+
+
+class Borrow(db.Model):
+    """Association table of borrow. Store all books borrowed by user."""
+    ___tablename__ = 'borrows'
+
+    borrow_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('books.book_id'))
+    date_borrowed = db.Column(db.DateTime)
+    due_date = db.Column(db.DateTime)
+    return_time = db.Column(db.DateTime)
+    returned = db.Column(db.Boolean, nullable=False)
+    book = db.relationship("Book", backref=db.backref("user_borrows"))
+    # user = db.relationship("User", backref=db.backref("borrows", cascade="all, delete-orphan"))
+    user = db.relationship("User", backref=db.backref("book_borrows"))
+
+    def borrow_serializer(self):
+        """Serialize data for borrow"""
+        borrow_details = {
+            'Borrow Id': self.borrow_id,
+            'Book Id': self.book_id,
+            'User Id': self.user_id,
+            'Return Status': self.returned,
+        }
+        return borrow_details
+
+    def save_borrowed_book(self):
+        """Save a book borrowed by the user"""
+        db.session.add(self)
+        db.session.commit()
+
+    def return_borrowed_book(self):
+        db.session.commit()
 
 
 class User(db.Model):
@@ -14,19 +44,23 @@ class User(db.Model):
     """
     __tablename__ = 'users'
 
-    user_id = db.Column(db.Integer, primary_key=True, unique=True)
+    user_id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, unique=True, nullable=False)
-    username = db.Column(db.String, unique=True)
+    first_name = db.Column(db.String, nullable=False)
+    last_name = db.Column(db.String, nullable=False)
+    username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
-    borrows = db.relationship('Borrow', backref='user', lazy='dynamic')
+    books = db.relationship('Book', secondary='borrow')
 
     def user_serializer(self):
         """Serialize the user data"""
         user_details = {
-            'user_id': self.user_id,
-            'email': self.email,
-            'username': self.username,
-            'password': self.password
+            'User Id': self.user_id,
+            'Email': self.email,
+            'First Name': self.first_name,
+            'Last Name': self.last_name,
+            'Username': self.username,
+            'Password': self.password
         }
         return user_details
 
@@ -38,34 +72,6 @@ class User(db.Model):
     def update_user(self):
         db.session.commit()
 
-    def generate_token(self, user_id):
-        """Generate token for user authentication"""
-        try:
-            payload = {
-                'exp': datetime.utcnow() + timedelta(minutes=10),
-                'iat': datetime.utcnow(),
-                'sub': user_id
-            }
-            jwt_string = jwt.encode(
-                payload,
-                current_app.config.get('SECRET'),
-                algorithm='HS256'
-            )
-            return jwt_string
-        except Exception as e:
-            return str(e)
-
-    @staticmethod
-    def decode_token(token):
-        """Decode the generated token via the authorization header"""
-        try:
-            payload = jwt.decode(token, current_app.config.get('SECRET'))
-            return payload['sub']
-        except jwt.ExpiredSignatureError:
-            return "This token is expired. Please login to get new token"
-        except jwt.InvalidTokenError:
-            return "Invalid token. Please register or login"
-
 
 class Book(db.Model):
     """
@@ -74,21 +80,29 @@ class Book(db.Model):
 
     __tablename__ = 'books'
 
-    book_id = db.Column(db.Integer, primary_key=True, nullable=False)
+    book_id = db.Column(db.Integer, primary_key=True)
     book_title = db.Column(db.String, nullable=False)
     authors = db.Column(db.String, nullable=False)
     year = db.Column(db.Integer, nullable=False)
+    isnb = db.Column(db.Integer)
+    city_published = db.Column(db.String)
+    edition = db.Column(db.Integer)
+    publisher = db.Column(db.String)
     copies = db.Column(db.Integer, nullable=False)
-    borrows = db.relationship('Borrow', backref='book', lazy='dynamic')
+    users = db.relationship('User', secondary='borrow')
 
     def book_serializer(self):
         """This is a serialized book details stored in dict"""
         book_details = {
-            'book_id': self.book_id,
-            'book_title': self.book_title,
-            'authors': self.authors,
-            'year': self.year,
-            'copies': self.copies
+            'Book Id': self.book_id,
+            'Book Title': self.book_title,
+            'Authors': self.authors,
+            'Year': self.year,
+            'ISNB': self.isnb,
+            'City Published': self.city_published,
+            'Book edition': self.edition,
+            'Publisher': self.publisher,
+            'Copies': self.copies
         }
         return book_details
 
@@ -107,61 +121,21 @@ class Book(db.Model):
         db.session.commit()
 
 
-class Borrow(db.Model):
-    """Class holding the models for borrow and history"""
-    __tablename__ = 'borrows'
-
-    borrow_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.user_id))
-    book_id = db.Column(db.Integer, db.ForeignKey(Book.book_id))
-    date_borrowed = db.Column(db.DateTime)
-    due_date = db.Column(db.DateTime)
-    return_time = db.Column(db.DateTime)
-    returned = db.Column(db.Boolean, nullable=False)
-
-    def borrow_serializer(self):
-        """Serialize data for borrow"""
-        borrow_details = {
-            'borrow_id': self.borrow_id,
-            'book_id': self.book_id,
-            'user_id': self.user_id,
-            'returned': self.returned,
-        }
-        return borrow_details
-
-    def save_borrowed_book(self):
-        """Save a book borrowed by the user"""
-        db.session.add(self)
-        db.session.commit()
-
-    def return_borrowed_book(self):
-        db.session.commit()
-
-
-class BlacklistToken(db.Model):
+class RevokedToken(db.Model):
     """
     Create a table for blacklisted tokens
     """
-    __tablename__ = "blacklisted_tokens"
+    __tablename__ = "revoked_tokens"
 
     id = db.Column(db.Integer, primary_key=True)
-    token = db.column(db.String)
-    blacklisted = db.Column(db.DateTime, nullable=False)
+    jti = db.column(db.String(80))
 
-    def __init__(self, token):
-        """Initialize token blacklist"""
-        self.token = token
-        self.blacklisted = datetime.utcnow()
-
-    def save_token(self):
+    def add_token(self):
         """Save blacklisted token"""
         db.session.add(self)
         db.session.commit()
 
-    @staticmethod
-    def check_blacklisted(token):
-        blacklisted = BlacklistToken.query.filter_by(
-            token=str(token)).first()
-        if blacklisted:
-            return True
-        return False
+    @classmethod
+    def is_jti_blacklisted(cls, jti):
+        query = cls.query.filter_by(jti=jti).first()
+        return bool(query)
