@@ -22,10 +22,10 @@ class Borrow(db.Model):
     def borrow_serializer(self):
         """Serialize data for borrow"""
         borrow_details = {
-            'Borrow Id': self.borrow_id,
-            'Book Id': self.book_id,
-            'User Id': self.user_id,
-            'Return Status': self.returned,
+            'borrow_id': self.borrow_id,
+            'book_id': self.book_id,
+            'user_id': self.user_id,
+            'returned': self.returned,
         }
         return borrow_details
 
@@ -55,12 +55,12 @@ class User(db.Model):
     def user_serializer(self):
         """Serialize the user data"""
         user_details = {
-            'User Id': self.user_id,
-            'Email': self.email,
-            'First Name': self.first_name,
-            'Last Name': self.last_name,
-            'Username': self.username,
-            'Password': self.password
+            'user_id': self.user_id,
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'username': self.username,
+            'password': self.password
         }
         return user_details
 
