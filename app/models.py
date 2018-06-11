@@ -9,14 +9,15 @@ class Borrow(db.Model):
     ___tablename__ = 'borrows'
 
     borrow_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String, db.ForeignKey('users.user_id'), primary_key=True)
-    book_id = db.Column(db.String, db.ForeignKey('books.book_id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('books.book_id'))
     date_borrowed = db.Column(db.DateTime)
     due_date = db.Column(db.DateTime)
     return_time = db.Column(db.DateTime)
     returned = db.Column(db.Boolean, nullable=False)
-    book = db.relationship("Book", backref="user_borrows")
-    user = db.relationship("User", backref="book_borrows")
+    book = db.relationship("Book", backref=db.backref("user_borrows"))
+    # user = db.relationship("User", backref=db.backref("borrows", cascade="all, delete-orphan"))
+    user = db.relationship("User", backref=db.backref("book_borrows"))
 
     def borrow_serializer(self):
         """Serialize data for borrow"""
@@ -83,11 +84,12 @@ class Book(db.Model):
     book_title = db.Column(db.String, nullable=False)
     authors = db.Column(db.String, nullable=False)
     year = db.Column(db.Integer, nullable=False)
-    isnb = db.Column(db.String)
-    city_published = db.column(db.String)
-    edition = db.column(db.Integer)
+    isnb = db.Column(db.Integer)
+    city_published = db.Column(db.String)
+    edition = db.Column(db.Integer)
     publisher = db.Column(db.String)
     copies = db.Column(db.Integer, nullable=False)
+    users = db.relationship('User', secondary='borrow')
 
     def book_serializer(self):
         """This is a serialized book details stored in dict"""
@@ -96,10 +98,10 @@ class Book(db.Model):
             'Book Title': self.book_title,
             'Authors': self.authors,
             'Year': self.year,
-            'Book edition': self.edition,
             'ISNB': self.isnb,
-            'Publisher': self.publisher,
             'City Published': self.city_published,
+            'Book edition': self.edition,
+            'Publisher': self.publisher,
             'Copies': self.copies
         }
         return book_details

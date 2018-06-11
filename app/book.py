@@ -2,7 +2,7 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 import random
 
-from app.models import Book, User
+from app.models import Book, User, Borrow
 from app.parsers import add_book_parser, get_parser, edit_book_parser
 
 
@@ -30,13 +30,11 @@ class AddBook(Resource):
         admin = check_admin()
         if not admin:
             return {"Message": "Only admin can add a book."}, 403
-        check_if_available = Book.query.filter_by(book_title=book_title, authors=authors,
-                                                  year=year, edition=edition, city_published=city_published,
-                                                  isnb=isnb, publisher=publisher).first()
+        check_if_available = Book.query.filter_by(book_title=book_title).first()
         if check_if_available is None:
             new_book = Book(book_id=random.randint(1111, 9999), book_title=book_title, authors=authors,
-                            year=year, edition=edition, city_published=city_published, isnb=isnb,
-                            publisher=publisher, copies=copies)
+                            edition=edition, city_published=city_published, isnb=isnb, publisher=publisher,
+                            year=year, copies=copies)
             new_book.save_book()
             result = new_book.book_serializer()
             return {"Message": "The book was added successfully.", "Book Added": result}, 201
@@ -121,10 +119,13 @@ class SingleBook(Resource):
     def delete(self, book_id):
         """Delete method to delete a single book"""
         get_book_id = Book.query.filter_by(book_id=book_id).first()
+        is_borrowed = Borrow.query.filter_by(book_id=book_id).first()
         admin = check_admin()
         if not admin:
             return {"Message": "Admin can only delete a book."}, 403
         if get_book_id:
+            if is_borrowed:
+                return {"Message": "This book is currently borrowed and cannot be deleted."}, 403
             get_book_id.delete_book()
             return {"Message": "The book was deleted successfully."}, 204
         return {"Error": "Book not found."}, 404

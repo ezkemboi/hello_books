@@ -19,6 +19,8 @@ class DevelopmentConfig(Config):
     """
     Only development configurations goes here.
     """
+
+    print("the db is ", os.getenv('DATABASE_URL'))
     DEBUG = True
     SECRET = os.getenv('SECRET')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
