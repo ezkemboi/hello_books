@@ -84,27 +84,13 @@ class Book(db.Model):
     book_title = db.Column(db.String, nullable=False)
     authors = db.Column(db.String, nullable=False)
     year = db.Column(db.Integer, nullable=False)
-    isnb = db.Column(db.Integer)
+    book_isnb = db.Column(db.String)
     city_published = db.Column(db.String)
     edition = db.Column(db.Integer)
     publisher = db.Column(db.String)
     copies = db.Column(db.Integer, nullable=False)
-    users = db.relationship('User', secondary='borrow')
 
-    def book_serializer(self):
-        """This is a serialized book details stored in dict"""
-        book_details = {
-            'Book Id': self.book_id,
-            'Book Title': self.book_title,
-            'Authors': self.authors,
-            'Year': self.year,
-            'ISNB': self.isnb,
-            'City Published': self.city_published,
-            'Book edition': self.edition,
-            'Publisher': self.publisher,
-            'Copies': self.copies
-        }
-        return book_details
+    users = db.relationship('User', secondary='borrow')
 
     def save_book(self):
         """This method allow admin to save a book"""
@@ -119,6 +105,20 @@ class Book(db.Model):
     def update_book(self):
         """Update a book edited by the admin"""
         db.session.commit()
+
+    def book_serializer(self):
+        """This is a serialized book details stored in dict"""
+        return {
+            'book_id': self.book_id,
+            'book_title': self.book_title,
+            'authors': self.authors,
+            'year': self.year,
+            'book_isnb': self.book_isnb,
+            'city_published': self.city_published,
+            'book_edition': self.edition,
+            'publisher': self.publisher,
+            'copies': self.copies
+        }
 
 
 class RevokedToken(db.Model):

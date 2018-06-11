@@ -11,9 +11,8 @@ from app.parsers import get_parser
 @jwt_required
 def user_un_returned_books():
     """Check list of books that user have not returned"""
-    current_user = get_jwt_identity()
     return Borrow.query.filter(Borrow.returned == 'false',
-                               Borrow.user_id == current_user).all()
+                               Borrow.user_id == get_jwt_identity()).all()
 
 
 class BorrowBook(Resource):
@@ -72,7 +71,7 @@ class BorrowHistory(Resource):
             return {"Un_returned books": results}, 200
         else:
             all_borrowed_books = Borrow.query.filter_by(
-                user_id=get_jwt_identity().user_id).paginate(
+                user_id=get_jwt_identity()).paginate(
                 page=page, per_page=limit)
             all_borrowed = all_borrowed_books.items
             num_results = all_borrowed_books.total
