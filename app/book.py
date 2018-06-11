@@ -24,16 +24,17 @@ class AddBook(Resource):
         year = args['year']
         edition = args['edition']
         city_published = args['city_published']
-        isnb = args['isnb']
+        book_isnb = args['book_isnb']
         publisher = args['publisher']
         copies = args['copies']
         admin = check_admin()
+
         if not admin:
             return {"Message": "Only admin can add a book."}, 403
-        check_if_available = Book.query.filter_by(book_title=book_title).first()
+        check_if_available = Book.query.filter_by(book_title=book_title, authors=authors).first()
         if check_if_available is None:
             new_book = Book(book_id=random.randint(1111, 9999), book_title=book_title, authors=authors,
-                            edition=edition, city_published=city_published, isnb=isnb, publisher=publisher,
+                            edition=edition, city_published=city_published, book_isnb=book_isnb, publisher=publisher,
                             year=year, copies=copies)
             new_book.save_book()
             result = new_book.book_serializer()
@@ -47,7 +48,7 @@ class AddBook(Resource):
             'year': check_if_available.year,
             'edition': check_if_available.edition,
             'city_published': check_if_available.city_published,
-            'isnb': check_if_available.isnb,
+            'isnb': check_if_available.book_isnb,
             'publisher': check_if_available.publisher,
             'copies': check_if_available.copies
         }}, 200
@@ -95,7 +96,7 @@ class SingleBook(Resource):
         edition = args['edition']
         publisher = args['publisher']
         city_published = args['city_published']
-        isnb = args['isnb']
+        book_isnb = args['book_isnb']
         copies = args['copies']
         admin = check_admin()
         if not admin:
@@ -109,10 +110,11 @@ class SingleBook(Resource):
             get_book.edition = edition
             get_book.publisher = publisher
             get_book.city_published = city_published
-            get_book.isnb = isnb
+            get_book.book_isnb = book_isnb
             get_book.copies = copies
             get_book.update_book()
             edited_book = get_book.book_serializer()
+
             return {"Success": edited_book}, 200
 
     @jwt_required
