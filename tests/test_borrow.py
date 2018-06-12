@@ -8,18 +8,6 @@ from tests.BaseTests import HelloBooksTestCase
 class BorrowBooksTestCase(HelloBooksTestCase):
     """This class contains all tests for users"""
 
-    def borrow_book(self):
-        """Reusable borrow book function"""
-        self.login()
-        response = self.client.post('/api/v1/users/books/1267')
-        return response
-
-    def test_borrow_unavailable_book(self):
-        """Test a user borrowing unavailable book"""
-        self.borrow_book()
-        res = self.client.post('/api/v1/users/books/1267')
-        self.assertEqual(res.status_code, 404)
-
     def test_borrow_book(self):
         """Test user borrow book"""
         res = self.borrow_book()
@@ -27,20 +15,62 @@ class BorrowBooksTestCase(HelloBooksTestCase):
 
     def test_return_book(self):
         """Test user returning book"""
-        self.borrow_book()
-        response = self.client.put('/api/v1/users/books/1267')
-        self.assertEqual(response.status_code, 200)
-        un_available_book = self.client.put('/api/v1/users/books/1269')
-        self.assertEqual(un_available_book.status_code, 400)
+        add_book = self.add_book()
+        book_data = json.loads(add_book.data)
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                         headers={"Authorization": "Bearer {}".format(access_token)})
+        return_book = self.client.put('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                                      headers={"Authorization": "Bearer {}".format(access_token)})
+        self.assertEqual(return_book.status_code, 200)
 
-    def test_history(self):
+    def test_return_unidentified_book(self):
+        """Test user returning book"""
+        add_book = self.add_book()
+        book_data = json.loads(add_book.data)
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                         headers={"Authorization": "Bearer {}".format(access_token)})
+        return_un_identified_book = self.client.put('/api/v1/users/books/1342',
+                                                    headers={"Authorization": "Bearer {}".format(access_token)})
+        self.assertEqual(return_un_identified_book.status_code, 400)
+
+    def test_return_borrow_history(self):
         """"Test when user returns history"""
         self.borrow_book()
-        res = self.client.get('/api/v1/users/books/')
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        res = self.client.get('/api/v1/users/books', headers={"Authorization": "Bearer {}".format(access_token)})
         self.assertEqual(res.status_code, 200)
+
+    def test_return_unavailable_borrow(self):
+        """Return test for when there is no book borrowed"""
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        res = self.client.get('/api/v1/users/books', headers={"Authorization": "Bearer {}".format(access_token)})
+        self.assertEqual(res.status_code, 404)
 
     def test_un_returned(self):
         """Tests books user has not returned"""
         self.borrow_book()
-        res = self.client.get('/api/v1/users/books/')
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        res = self.client.get('/api/v1/users/books?returned=false',
+                              headers={"Authorization": "Bearer {}".format(access_token)})
         self.assertEqual(res.status_code, 200)
+
+    def test_unavailable_un_returned(self):
+        """Tests books user has not returned"""
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        res = self.client.get('/api/v1/users/books?returned=false',
+                              headers={"Authorization": "Bearer {}".format(access_token)})
+        self.assertEqual(res.status_code, 404)

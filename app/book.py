@@ -31,7 +31,7 @@ class AddBook(Resource):
         admin = check_admin()
 
         if not admin:
-            return {"Message": "Only admin can add a book."}, 403
+            return {"message": "Only admin can add a book."}, 403
         check_if_available = Book.query.filter_by(book_title=book_title, authors=authors).first()
         if check_if_available is None:
             new_book = Book(book_id=random.randint(1111, 9999), book_title=book_title,
@@ -39,10 +39,10 @@ class AddBook(Resource):
                             book_isnb=book_isnb, publisher=publisher, year=year, copies=copies)
             new_book.save_book()
             result = new_book.book_serializer()
-            return {"Message": "The book was added successfully.", "Book Added": result}, 201
+            return {"message": "The book was added successfully.", "book_added": result}, 201
         check_if_available.copies += copies
         check_if_available.update_book()
-        return {"Message": "The book exist and was updated", "Details": {
+        return {"message": "The book exist and was updated", "book_details": {
             'book_id': check_if_available.book_id,
             'book_title': check_if_available.book_title,
             'authors': check_if_available.authors,
@@ -69,7 +69,7 @@ class AddBook(Resource):
         prev_num = books.prev_num
         next_num = books.next_num
         if not all_books:
-            return {"Message": "Books not found"}, 404
+            return {"message": "Books not found"}, 404
         results = [book.book_serializer() for book in all_books]
         return {
             "Total results": num_results,
@@ -101,7 +101,7 @@ class SingleBook(Resource):
         copies = args['copies']
         admin = check_admin()
         if not admin:
-            return {"Message": "Only admin can edit a book."}, 403
+            return {"message": "Only admin can edit a book."}, 403
         if not get_book:
             return {"The book is not found"}, 404
         if get_book:
@@ -116,7 +116,7 @@ class SingleBook(Resource):
             get_book.update_book()
             edited_book = get_book.book_serializer()
 
-            return {"Success": edited_book}, 200
+            return {"message": "The book was edited successfully.", "details": edited_book}, 200
 
     @jwt_required
     def delete(self, book_id):
@@ -125,18 +125,18 @@ class SingleBook(Resource):
         is_borrowed = Borrow.query.filter_by(book_id=book_id).first()
         admin = check_admin()
         if not admin:
-            return {"Message": "Admin can only delete a book."}, 403
+            return {"message": "Admin can only delete a book."}, 403
         if get_book_id:
             if is_borrowed:
-                return {"Message": "This book is currently borrowed and cannot be deleted."}, 403
+                return {"message": "This book is currently borrowed and cannot be deleted."}, 403
             get_book_id.delete_book()
-            return {"Message": "The book was deleted successfully."}, 204
-        return {"Error": "Book not found."}, 404
+            return {"message": "The book was deleted successfully."}, 204
+        return {"error": "Book not found."}, 404
 
     def get(self, book_id):
         """Get method for a single book"""
         book = Book.query.filter_by(book_id=book_id).first()
         if book:
             result = book.book_serializer()
-            return {"Book": result}, 200
-        return {"Error": "Book not found."}, 404
+            return {"book_details": result}, 200
+        return {"error": "Book not found."}, 404

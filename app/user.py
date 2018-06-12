@@ -38,20 +38,20 @@ class UserRegistration(Resource):
         hashed_password = generate_password_hash(password, method='sha256')
         taken_username = User.query.filter_by(username=username).first()
         if taken_username is not None:
-            return {"Message": "The username is already taken!"}, 409
+            return {"message": "The username is already taken!"}, 409
         if user:
-            return {"Message": "The user is already registered."}, 422
+            return {"message": "The user is already registered."}, 422
         if not valid_email:
-            return {"Message": "Please provide a valid email!"}, 400
+            return {"message": "Please provide a valid email!"}, 400
         elif not valid_username:
-            return {"Message": "Username need to be more than 4 characters!"}, 400
+            return {"message": "Username need to be more than 4 characters!"}, 400
         elif not password_length:
-            return {"Message": "Password is short!"}, 400
+            return {"message": "Password is short!"}, 400
         else:
             create_user = User(user_id=random.randint(1111, 9999), email=email, first_name=first_name,
                                last_name=last_name, username=username, password=hashed_password)
             create_user.save_user()
-            return {"Message": "The User is successfully Registered."}, 201
+            return {"message": "The User is successfully Registered."}, 201
 
 
 class UserLogin(Resource):
@@ -63,10 +63,10 @@ class UserLogin(Resource):
         password = args['password']
         log_in_user = User.query.filter_by(email=email).first()
         if not log_in_user:
-            return {"Message": "Invalid email!"}, 403
+            return {"message": "Invalid email!"}, 403
         if check_password_hash(log_in_user.password, password):
             access_token = create_access_token(identity=log_in_user.user_id)
-            return {'Message': "Successfully logged in.", "access_token": access_token}, 200
+            return {'message': "Successfully logged in.", "access_token": access_token}, 200
 
 
 class UserLogout(Resource):
@@ -77,12 +77,9 @@ class UserLogout(Resource):
     def post(self):
         """Post Method to logout user"""
         jti = get_raw_jwt()['jti']
-        try:
-            revoked_token = RevokedToken(jti=jti)
-            revoked_token.add_token()
-            return {"Message": "You are logged out."}, 200
-        except:
-            return {"Message": "Something went wrong."}, 500
+        revoked_token = RevokedToken(jti=jti)
+        revoked_token.add_token()
+        return {"message": "You are logged out."}, 200
 
 
 class ResetPassword(Resource):
@@ -96,12 +93,12 @@ class ResetPassword(Resource):
         email = args['email']
         reset_user = User.query.filter_by(email=email).first()
         if not reset_user:
-            return {"Message": "The email does not exist."}, 404
+            return {"message": "The email does not exist."}, 404
         password = args['password']
         hashed_password = generate_password_hash(password, method='sha256')
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
         if not password_length:
-            return {"Message": "Password is short!"}, 400
+            return {"message": "Password is short!"}, 400
         reset_user.password = hashed_password
         reset_user.update_user()
-        return {"Message": "Password is reset successfully."}, 200
+        return {"message": "Password is reset successfully."}, 200

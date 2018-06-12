@@ -19,8 +19,6 @@ class DevelopmentConfig(Config):
     """
     Only development configurations goes here.
     """
-
-    print("the db is ", os.getenv('DATABASE_URL'))
     DEBUG = True
     SECRET = os.getenv('SECRET')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
@@ -33,8 +31,8 @@ class TestingConfig(Config):
     """
     TESTING = True
     DEBUG = True
-    SECRET = os.getenv('SECRET')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL_TEST')
+    SECRET_KEY = "SecretKeyFortesting"
+    SQLALCHEMY_DATABASE_URI = "postgresql://localhost/hello_book"
 
 
 class StagingConfig(Config):

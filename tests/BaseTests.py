@@ -19,68 +19,86 @@ class HelloBooksTestCase(unittest.TestCase):
         db.create_all()
         self.user_data = {
             'user_id': random.randint(1111, 9999),
-            'email': "myemail@gmail.com",
-            'username': "testuser",
-            'password': "passwordtrade"
+            'email': "user@gmail.com",
+            'username': "user",
+            'first_name': "John",
+            'last_name': "Doe",
+            'password': "password"
         }
         self.admin_data = {
             'user_id': random.randint(1111, 9999),
             'email': "admin@hellobookslibrary.com",
+            'first_name': "Admin",
+            'last_name': "Clarke",
             'username': "admin",
             'password': "adminpassword"
         }
         self.short_reset_psw = {
-            'user_id': random.randint(1111, 9999),
-            'email': "myemail@gmail.com",
-            'username': "testuser",
+            'email': "user@gmail.com",
             'password': "short"
         }
         self.empty_email_on_reset = {
             'user_id': random.randint(1111, 9999),
             'email': "",
             'username': "testuser",
+            'first_name': "Clarke",
+            'last_name': "Mike",
             'password': "validpassword"
         }
         self.user_data_1 = {
             'user_id': random.randint(1111, 9999),
             'username': 'user1',
             'email': 'user1@gmail.com',
+            'first_name': "Clarke",
+            'last_name': "Mike",
             'password': 'user1password'
         }
         self.empty_data = {
             'user_id': random.randint(1111, 9999),
             'username': '',
             'email': '',
-            'password': ''
+            'password': '',
+            'first_name': '',
+            'last_name': ''
         }
         self.invalid_email = {
             'user_id': random.randint(1111, 9999),
-            'username': 'user',
+            'username': 'johndoe',
             'email': 'invalid@email',
+            'first_name': "Clarke",
+            'last_name': "Mike",
             'password': 'password'
         }
         self.invalid_username = {
             'user_id': random.randint(1111, 9999),
             'username': 'use',
             'email': 'user1@gmail.com',
+            'first_name': "Clarke",
+            'last_name': "Mike",
             'password': 'user1password'
         }
         self.short_password = {
             'user_id': random.randint(1111, 9999),
             'username': 'user2',
             'email': 'user2@gmail.com',
+            'first_name': "Clarke",
+            'last_name': "Mike",
             'password': 'user1'
         }
         self.invalid_user_data = {
             'user_id': random.randint(1111, 9999),
             'email': "invalid@email.com",
             'username': "wrongusername",
+            'first_name': "wrongClarke",
+            'last_name': "wrongMike",
             'password': "wrongpassword"
         }
         self.similar_user_email = {
             'user_id': random.randint(1111, 9999),
-            'email': "myemail@gmail.com",
+            'email': "user@gmail.com",
             'username': "testuser1",
+            'first_name': "Clarke",
+            'last_name': "Mike",
             'password': "passwordtrade"
         }
         self.add_book_data = {
@@ -88,12 +106,20 @@ class HelloBooksTestCase(unittest.TestCase):
             'book_title': "The Wonder Boy",
             'authors': "john doe",
             'year': "2006",
+            'edition': '1',
+            'city_published': "Nairobi",
+            'book_isnb': "2783722982",
+            'publisher': "Longhorn",
             'copies': "2"
         }
         self.edit_book_data = {
             'book_title': "The wonder Boy edited version",
             'authors': "john Jack",
             'year': "2007",
+            'book_isnb': "2783722982",
+            'publisher': "Longhorn",
+            'city_published': "Nairobi",
+            'edition': '1',
             'copies': "12"
         }
         self.missing_book_data = {
@@ -110,24 +136,49 @@ class HelloBooksTestCase(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
-    def register(self):
+    def register_user(self):
         """This method registers a user"""
         return self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data),
                                 content_type='application/json')
 
-    def login(self):
+    def login_user(self):
         """This is a login user helper"""
-        self.register()
+        self.register_user()
         return self.client.post('/api/v1/auth/login', data=json.dumps(self.user_data),
                                 content_type='application/json')
 
-    # def authenticate_user(self):
-    #     """Authenticate user by generating token"""
-    #     self.register()
-    #     login = self.login()
-    #     access_token = json.loads(login.data.decode())['Access_token']
-    #     return access_token
-    #
+    def register_admin(self):
+        """This method register admin"""
+        return self.client.post('/api/v1/auth/register', data=json.dumps(self.admin_data),
+                                content_type='application/json')
+
+    def login_admin(self):
+        """Register and login admin"""
+        self.register_admin()
+        return self.client.post('/api/v1/auth/login', data=json.dumps(self.admin_data),
+                                content_type='application/json')
+
+    def add_book(self):
+        """Add book function for reuse"""
+        admin_login = self.login_admin()
+        login_msg = json.loads(admin_login.data)
+        access_token = login_msg['access_token']
+        add_book = self.client.post('/api/v1/books', data=json.dumps(self.add_book_data),
+                                    headers={
+                                             "Authorization": "Bearer {}".format(access_token)},
+                                    content_type='application/json')
+        return add_book
+
+    def borrow_book(self):
+        """Reusable borrow book function"""
+        add_book = self.add_book()
+        book_data = json.loads(add_book.data)
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        user_borrow_book = self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                                            headers={"Authorization": "Bearer {}".format(access_token)})
+        return user_borrow_book
 
 
 if __name__ == '__main__':

@@ -27,18 +27,18 @@ class BorrowBook(Resource):
         due_date = datetime.datetime.now() + datetime.timedelta(days=14)
         if available_book.copies >= 1:
             if has_borrowed_book:
-                return {"Message": "You have borrowed this book previously and can't borrow until returned"}, 403
+                return {"message": "You have borrowed this book previously and can't borrow until returned"}, 403
             books_borrowed = user_un_returned_books()
             if len(books_borrowed) > 3:
-                return {"Message": "You can borrow only up to 3 books."}, 403
+                return {"message": "You can borrow only up to 3 books."}, 403
             borrow_book = Borrow(borrow_id=random.randint(1111, 9999),
                                  book_id=book_id, user_id=get_jwt_identity(), returned=False,
                                  date_borrowed=date_borrowed, due_date=due_date)
             available_book.copies -= 1
             borrow_book.save_borrowed_book()
             result = borrow_book.borrow_serializer()
-            return {"Book borrowed": result}, 200
-        return {"Message": "The book is not available for borrow."}, 404
+            return {"book_borrowed": result}, 200
+        return {"message": "The book is not available for borrow."}, 404
 
     @jwt_required
     def put(self, book_id):
@@ -50,8 +50,8 @@ class BorrowBook(Resource):
             book_in_db = Book.query.filter_by(book_id=book_id).first()
             book_in_db.copies += 1
             return_book.return_borrowed_book()
-            return {"Message": "You have returned the book successfully."}, 200
-        return {"Message": "Your trying to return unidentified book"}, 400
+            return {"message": "You have returned the book successfully."}, 200
+        return {"message": "Your trying to return unidentified book"}, 400
 
 
 class BorrowHistory(Resource):
@@ -68,9 +68,9 @@ class BorrowHistory(Resource):
         if returned == 'false':
             un_returned_books = user_un_returned_books()
             if not un_returned_books:
-                return {"Message": "You do not have books that are un-returned"}, 404
+                return {"message": "You do not have books that are un-returned"}, 404
             results = [un_returned_books.borrow_serializer() for un_returned_books in un_returned_books]
-            return {"Un_returned books": results}, 200
+            return {"un_returned_books": results}, 200
         else:
             all_borrowed_books = Borrow.query.filter_by(
                 user_id=get_jwt_identity()).paginate(
@@ -84,7 +84,7 @@ class BorrowHistory(Resource):
             prev_num = all_borrowed_books.prev_num
             next_num = all_borrowed_books.next_num
             if len(all_borrowed) < 1:
-                return {"Message": "You have not borrowed any book."}, 404
+                return {"message": "You have not borrowed any book."}, 404
             results = [user_borrows.borrow_serializer()
                        for user_borrows in all_borrowed]
             return {
