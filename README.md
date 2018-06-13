@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/ezrqnkemboi/hello_books.svg?branch=master)](https://travis-ci.org/ezrqnkemboi/hello_books) 
-[![Coverage Status](https://coveralls.io/repos/github/ezrqnkemboi/hello_books/badge.svg?branch=master)](https://coveralls.io/github/ezrqnkemboi/hello_books?branch=master) 
+[![Coverage Status](https://coveralls.io/repos/github/ezrqnkemboi/hello_books/badge.svg?branch=develop)](https://coveralls.io/github/ezrqnkemboi/hello_books?branch=develop)
 
 # Hello_Books API    
 
@@ -49,9 +49,12 @@ Hello-Books is a simple application that helps manage a library and its processe
    Cd to the directory of the application through: `cd hello_books`
    
    To run test, use: `coverage run -m unittest discover`
-    
+   
 # Deployment Link
    Link: https://shielded-peak-77124.herokuapp.com
+   
+# Designs Link
+   Link: https://ezrqnkemboi.github.io/hello_books_designs/
 
 # Contributors
    Ezrqn Kemboi
