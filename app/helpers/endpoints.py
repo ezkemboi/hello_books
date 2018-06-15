@@ -1,10 +1,10 @@
+"""This file contains all registered endpoints of the application"""
 from app import api
 
 from app.users.views import UserLogin, UserLogout, UserRegistration, ResetPassword
 from app.books.views import AddBook, SingleBook
 from app.borrow.views import BorrowHistory, BorrowBook
 
-# The registration of all endpoints
 api.add_resource(UserRegistration, '/auth/register/')
 api.add_resource(UserLogin, '/auth/login/')
 api.add_resource(UserLogout, '/auth/logout/')

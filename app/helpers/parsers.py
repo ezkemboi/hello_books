@@ -1,6 +1,6 @@
+"""Define all parsers for all classes"""
 from flask_restful import reqparse
 
-# Define all parsers for all classes
 login_parser = reqparse.RequestParser()
 login_parser.add_argument('email', type=str, help='Please enter the email', required=True)
 login_parser.add_argument('password', type=str, help='please enter the password', required=True)

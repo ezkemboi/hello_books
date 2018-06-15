@@ -4,6 +4,7 @@ import json
 
 from app import app, db
 from config import app_config
+from app.helpers.endpoints import api
 
 
 class HelloBooksTestCase(unittest.TestCase):
@@ -116,6 +117,16 @@ class HelloBooksTestCase(unittest.TestCase):
             'edition': '1',
             'city_published': "Nairobi",
             'book_isnb': "2783722982",
+            'publisher': "Longhorn",
+            'copies': "2"
+        }
+        self.similar_book_data = {
+            'book_title': "The Wonder Boy",
+            'authors': "john doe",
+            'year': "2006",
+            'edition': '1',
+            'city_published': "Nairobi",
+            'book_isnb': "27837982",
             'publisher': "Longhorn",
             'copies': "2"
         }

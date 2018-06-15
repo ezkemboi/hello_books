@@ -13,6 +13,19 @@ class BorrowBooksTestCase(HelloBooksTestCase):
         res = self.borrow_book()
         self.assertEqual(res.status_code, 200)
 
+    def test_borrow_book_already_borrowed(self):
+        """Test to borrow a book already borrowed and not yet returned"""
+        add_book = self.add_book()
+        book_data = json.loads(add_book.data)
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                         headers={"Authorization": "Bearer {}".format(access_token)})
+        borrow_again = self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                                        headers={"Authorization": "Bearer {}".format(access_token)})
+        self.assertEqual(borrow_again.status_code, 403)
+
     def test_return_book(self):
         """Test user returning book"""
         add_book = self.add_book()

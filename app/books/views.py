@@ -4,6 +4,7 @@ import random
 
 from app.models import Book, User, Borrow
 from app.helpers.parsers import add_book_parser, get_parser, edit_book_parser
+from run import jwt
 
 
 def check_admin():
@@ -22,16 +23,14 @@ class AddBook(Resource):
         add_book_args = add_book_parser.parse_args()
         book_title = add_book_args['book_title'].strip().title()
         authors = add_book_args['authors'].strip().title()
-        year = add_book_args['year'].isdigit()
-        edition = add_book_args['edition'].isnumeric()
+        year = add_book_args['year']
+        edition = add_book_args['edition']
         city_published = add_book_args['city_published'].strip().title()
-        book_isnb = add_book_args['book_isnb'].isnumeric()
+        book_isnb = add_book_args['book_isnb']
         publisher = add_book_args['publisher'].strip().title()
-        copies = add_book_args['copies'].isnumeric()
+        copies = add_book_args['copies']
         available_by_isnb = Book.query.filter_by(book_isnb=book_isnb).first()
         available_by_author_title = Book.query.filter_by(book_title=book_title, authors=authors).first()
-        if (year <= 2006 and len(book_isnb) != 10) or (year >= 2007 and len(book_isnb) != 13):
-            return {"message": "Invalid book ISNB."}, 400
         if not check_admin():
             return {"message": "Only admin can add a book."}, 403
         if available_by_isnb:
@@ -47,13 +46,17 @@ class AddBook(Resource):
     def get(self):
         """Get method to get all books"""
         get_books_args = get_parser.parse_args()
-        page = get_books_args['page'].isnumeric()
-        limit = get_books_args['limit'].isnumeric()
+        page = get_books_args['page']
+        limit = get_books_args['limit']
         books = Book.query.paginate(page=page, per_page=limit)
         all_books = books.items
         num_results = books.total
         total_pages = books.pages
         current_page = books.page
+        # if page < 1 or limit < 1 or not page.isdigit() or not page.isdigit():
+        #     return {"message": "That is not a valid page number or limit."}, 400
+        if current_page == 1:
+            has_prev_page = None
         has_next_page = books.has_next
         has_prev_page = books.has_prev
         prev_num = books.prev_num
@@ -81,23 +84,23 @@ class SingleBook(Resource):
         """Put method to edit already existing book. Book title, isnb and authors is not edited."""
         edit_book_args = edit_book_parser.parse_args()
         year = edit_book_args['year']
-        edition = edit_book_args['edition'].isnumeric()
+        edition = edit_book_args['edition']
         publisher = edit_book_args['publisher'].strip().title()
         city_published = edit_book_args['city_published'].strip().title()
-        copies = edit_book_args['copies'].isnumeric()
+        copies = edit_book_args['copies']
         get_book = Book.query.filter_by(book_id=book_id).first()
-        if not check_admin():
-            return {"message": "Only admin can edit a book."}, 403
-        if not get_book:
-            return {"The book is not found"}, 404
-        get_book.year = year
-        get_book.edition = edition
-        get_book.publisher = publisher
-        get_book.city_published = city_published
-        get_book.copies = copies
-        get_book.update_book()
-        edited_book = get_book.book_serializer()
-        return {"message": "The book was edited successfully.", "details": edited_book}, 200
+        if get_book:
+            if not check_admin():
+                return {"message": "Only admin can edit a book."}, 403
+            get_book.year = year
+            get_book.edition = edition
+            get_book.publisher = publisher
+            get_book.city_published = city_published
+            get_book.copies = copies
+            get_book.update_book()
+            edited_book = get_book.book_serializer()
+            return {"message": "The book was edited successfully.", "details": edited_book}, 200
+        return {"The book is not found"}, 404
 
     @jwt_required
     def delete(self, book_id):
@@ -110,7 +113,7 @@ class SingleBook(Resource):
             if is_borrowed:
                 return {"message": "This book is currently borrowed and cannot be deleted."}, 403
             get_book_id.delete_book()
-            return {"message": "The book was deleted successfully."}, 204
+            return {"message": "The book was deleted successfully."}, 200
         return {"error": "Book not found."}, 404
 
     def get(self, book_id):

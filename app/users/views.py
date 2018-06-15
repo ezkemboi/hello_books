@@ -2,7 +2,6 @@
 This file holds all the resources for user from registration to borrow books and return books
 """
 import re
-# from flask import render_template
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
@@ -10,13 +9,7 @@ import random
 
 from app.models import User, RevokedToken
 from app.helpers.parsers import login_parser, register_parser, reset_password_parser
-
-
-#
-# @app.route('/')
-# def index():
-#     """It holds the homepage url and renders the generated html doc for api documentation"""
-#     return render_template('docs.html')
+from run import jwt
 
 
 class UserRegistration(Resource):
@@ -26,8 +19,8 @@ class UserRegistration(Resource):
         """Post method for user registration"""
         registration_args = register_parser.parse_args()
         email = registration_args['email']
-        first_name = registration_args['first_name']
-        last_name = registration_args['last_name']
+        first_name = registration_args['first_name'].strip().title()
+        last_name = registration_args['last_name'].strip().title()
         username = registration_args['username']
         password = registration_args['password']
         user = User.query.filter_by(email=email).first()

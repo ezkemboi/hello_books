@@ -6,41 +6,13 @@ import random
 
 from app.models import Book, Borrow
 from app.helpers.parsers import get_parser
+from run import jwt
 
 
 @jwt_required
 def user_un_returned_books():
     """Check list of books that user have not returned"""
     return Borrow.query.filter(Borrow.returned == 'false', Borrow.user_id == get_jwt_identity()).all()
-
-
-@jwt_required
-def all_borrow_history():
-    """It returns all books that the user has ever borrowed"""
-    borrow_args = get_parser.parse_args()
-    page = borrow_args['page'].isnumeric()
-    limit = borrow_args['limit'].isnumeric()
-    all_borrowed_books = Borrow.query.filter_by(user_id=get_jwt_identity()).paginate(page=page, per_page=limit)
-    all_borrowed = all_borrowed_books.items
-    num_results = all_borrowed_books.total
-    num_pages = all_borrowed_books.pages
-    current_page = all_borrowed_books.page
-    has_next_page = all_borrowed_books.has_next
-    has_prev_page = all_borrowed_books.has_prev
-    prev_num = all_borrowed_books.prev_num
-    next_num = all_borrowed_books.next_num
-    if len(all_borrowed) < 1:
-        return {"message": "You have not borrowed any book."}, 404
-    results = [user_borrows.borrow_serializer()
-               for user_borrows in all_borrowed]
-    return {
-               "Total results": num_results,
-               "Number of pages": num_pages,
-               "Current page": current_page,
-               "All borrowed books": results,
-               "Previous page": prev_num,
-               "Next page": next_num
-           }, 200
 
 
 class BorrowBook(Resource):
@@ -90,20 +62,28 @@ class BorrowHistory(Resource):
     @jwt_required
     def get(self):
         """It returns the users borrowing history"""
+        borrow_args = get_parser.parse_args()
+        page = borrow_args['page']
+        limit = borrow_args['limit']
         returned = request.args.get('returned')
-        if returned != 'false' or returned != 'true':
-            return {"Message": "You have made a wrong choice."}, 403
+        all_borrowed_books = Borrow.query.filter_by(user_id=get_jwt_identity()).paginate(page=page, per_page=limit)
+        all_borrowed = all_borrowed_books.items
+        if len(all_borrowed) < 1:
+            return {"message": "You have not borrowed any book."}, 404
         if returned == 'false':
             un_returned_books = user_un_returned_books()
             if not un_returned_books:
                 return {"message": "You do not have books that are un-returned"}, 404
             results = [un_returned_books.borrow_serializer() for un_returned_books in un_returned_books]
             return {"un_returned_books": results}, 200
-        elif returned == 'true':
-            borrow_history = all_borrow_history()
-            return {"Books ever borrowed": borrow_history}, 200
-        else:
-            all_books_borrowed = all_borrow_history()
-            return {"Books ever borrowed": all_books_borrowed}, 200
-
-
+        if all_borrowed_books.page == 1:
+            has_prev_page = None
+        has_next_page = all_borrowed_books.has_next
+        has_prev_page = all_borrowed_books.has_prev
+        results = [user_borrows.borrow_serializer() for user_borrows in all_borrowed]
+        return {"total_results": all_borrowed_books.total,
+                "number_of_pages": all_borrowed_books.pages,
+                "current_page": all_borrowed_books.page,
+                "all_borrowed_books": results,
+                "previous_page": all_borrowed_books.prev_num,
+                "next_page": all_borrowed_books.next_num}, 200

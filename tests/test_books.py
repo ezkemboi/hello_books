@@ -13,8 +13,15 @@ class BooksTestCase(HelloBooksTestCase):
         """Add book by admin that already exist"""
         add_book = self.add_book()
         self.assertEqual(add_book.status_code, 201)
-        add_book_again = self.add_book()
-        self.assertEqual(add_book_again.status_code, 200)
+        add_similar_book_isnb = self.add_book()
+        self.assertEqual(add_similar_book_isnb.status_code, 409)
+        login_admin = self.login_admin()
+        login_msg = json.loads(login_admin.data)
+        access_token = login_msg['access_token']
+        add_similar_book_title_author = self.client.post('/api/v1/books', data=json.dumps(self.similar_book_data),
+                                                         headers={"Authorization": "Bearer {}".format(access_token)},
+                                                         content_type='application/json')
+        self.assertEqual(add_similar_book_title_author.status_code, 409)
 
     def test_user_add_book(self):
         """Tests that user cannot make crud operations. Only admin do."""
@@ -83,7 +90,7 @@ class BooksTestCase(HelloBooksTestCase):
         access_token = login_msg['access_token']
         delete_book = self.client.delete('/api/v1/books/{}'.format(book_data['book_added']['book_id']),
                                          headers={"Authorization": 'Bearer {}'.format(access_token)})
-        self.assertEqual(delete_book.status_code, 204)
+        self.assertEqual(delete_book.status_code, 200)
 
     def test_user_can_delete_a_book(self):
         """Test user deleting a book"""
@@ -104,5 +111,21 @@ class BooksTestCase(HelloBooksTestCase):
         delete_unavailable_book = self.client.delete('/api/v1/books/1234',
                                                      headers={"Authorization": 'Bearer {}'.format(access_token)})
         self.assertEqual(delete_unavailable_book.status_code, 404)
+
+    def test_delete_borrowed_book(self):
+        """Trying to delete a book that a user has not yet returned"""
+        add_book = self.add_book()
+        book_data = json.loads(add_book.data)
+        login_user = self.login_user()
+        login_msg = json.loads(login_user.data)
+        access_token = login_msg['access_token']
+        self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
+                         headers={"Authorization": "Bearer {}".format(access_token)})
+        login_admin = self.login_admin()
+        login_msg = json.loads(login_admin.data)
+        access_token = login_msg['access_token']
+        delete_book = self.client.delete('/api/v1/books/{}'.format(book_data['book_added']['book_id']),
+                                         headers={"Authorization": 'Bearer {}'.format(access_token)})
+        self.assertEqual(delete_book.status_code, 403)
 
 
