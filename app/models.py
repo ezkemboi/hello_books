@@ -16,7 +16,6 @@ class Borrow(db.Model):
     return_time = db.Column(db.DateTime)
     returned = db.Column(db.Boolean, nullable=False)
     book = db.relationship("Book", backref=db.backref("user_borrows"))
-    # user = db.relationship("User", backref=db.backref("borrows", cascade="all, delete-orphan"))
     user = db.relationship("User", backref=db.backref("book_borrows"))
 
     def borrow_serializer(self):
@@ -84,7 +83,7 @@ class Book(db.Model):
     book_title = db.Column(db.String, nullable=False)
     authors = db.Column(db.String, nullable=False)
     year = db.Column(db.Integer, nullable=False)
-    book_isnb = db.Column(db.String)
+    book_isnb = db.Column(db.String, unique=True, nullable=True)
     city_published = db.Column(db.String)
     edition = db.Column(db.Integer)
     publisher = db.Column(db.String)
@@ -108,7 +107,7 @@ class Book(db.Model):
 
     def book_serializer(self):
         """This is a serialized book details stored in dict"""
-        return {
+        book_details = {
             'book_id': self.book_id,
             'book_title': self.book_title,
             'authors': self.authors,
@@ -119,6 +118,7 @@ class Book(db.Model):
             'publisher': self.publisher,
             'copies': self.copies
         }
+        return book_details
 
 
 class RevokedToken(db.Model):

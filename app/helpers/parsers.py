@@ -23,8 +23,11 @@ add_book_parser.add_argument('publisher', help="Please enter the book publisher"
 add_book_parser.add_argument('edition', type=int, help="Please enter the book edition")
 
 edit_book_parser = add_book_parser.copy()
+edit_book_parser.remove_argument('book_title')
+edit_book_parser.remove_argument('authors')
+edit_book_parser.remove_argument('book_isnb')
 
 get_parser = reqparse.RequestParser()
-get_parser.add_argument('page', type=int, help="Please enter page")
-get_parser.add_argument('limit', type=int, help="Please enter page limit")
+get_parser.add_argument('page', type=int, help="Please enter page", location='args')
+get_parser.add_argument('limit', type=int, help="Please enter page limit", location='args')
 get_parser.add_argument('returned', type=bool)

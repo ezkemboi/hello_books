@@ -5,13 +5,12 @@ import re
 # from flask import render_template
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
 import random
 
-from app.models import User, RevokedToken, Borrow
-from app import app
-from app.parsers import login_parser, register_parser, reset_password_parser
-from run import jwt
+from app.models import User, RevokedToken
+from app.helpers.parsers import login_parser, register_parser, reset_password_parser
+
 
 #
 # @app.route('/')
@@ -25,42 +24,40 @@ class UserRegistration(Resource):
 
     def post(self):
         """Post method for user registration"""
-        args = register_parser.parse_args()
-        email = args['email']
-        first_name = args['first_name']
-        last_name = args['last_name']
-        username = args['username']
-        password = args['password']
+        registration_args = register_parser.parse_args()
+        email = registration_args['email']
+        first_name = registration_args['first_name']
+        last_name = registration_args['last_name']
+        username = registration_args['username']
+        password = registration_args['password']
         user = User.query.filter_by(email=email).first()
         valid_email = re.match("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", email.strip())
         valid_username = re.match("[A-Za-z0-9@#$%^&+=]{4,}", username.strip())
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
-        hashed_password = generate_password_hash(password, method='sha256')
         taken_username = User.query.filter_by(username=username).first()
-        if taken_username is not None:
-            return {"message": "The username is already taken!"}, 409
-        if user:
-            return {"message": "The user is already registered."}, 422
         if not valid_email:
             return {"message": "Please provide a valid email!"}, 400
-        elif not valid_username:
+        if not valid_username:
             return {"message": "Username need to be more than 4 characters!"}, 400
-        elif not password_length:
+        if not password_length:
             return {"message": "Password is short!"}, 400
-        else:
-            create_user = User(user_id=random.randint(1111, 9999), email=email, first_name=first_name,
-                               last_name=last_name, username=username, password=hashed_password)
-            create_user.save_user()
-            return {"message": "The User is successfully Registered."}, 201
+        if user:
+            return {"message": "The user is already registered."}, 422
+        if taken_username is not None:
+            return {"message": "The username is already taken!"}, 409
+        create_user = User(user_id=random.randint(1111, 9999), email=email, first_name=first_name, last_name=last_name,
+                           username=username, password=generate_password_hash(password, method='sha256'))
+        create_user.save_user()
+        return {"message": "The User is successfully Registered."}, 201
 
 
 class UserLogin(Resource):
     """It holds user login functionality"""
     def post(self):
         """The post method logs in user"""
-        args = login_parser.parse_args()
-        email = args['email']
-        password = args['password']
+        login_args = login_parser.parse_args()
+        email = login_args['email']
+        password = login_args['password']
         log_in_user = User.query.filter_by(email=email).first()
         if not log_in_user:
             return {"message": "Invalid email!"}, 403
@@ -89,12 +86,12 @@ class ResetPassword(Resource):
 
     def post(self):
         """The method allow user to reset password"""
-        args = reset_password_parser.parse_args()
-        email = args['email']
+        reset_pswd_args = reset_password_parser.parse_args()
+        email = reset_pswd_args['email']
         reset_user = User.query.filter_by(email=email).first()
         if not reset_user:
             return {"message": "The email does not exist."}, 404
-        password = args['password']
+        password = reset_pswd_args['password']
         hashed_password = generate_password_hash(password, method='sha256')
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
         if not password_length:

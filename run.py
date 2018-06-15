@@ -4,8 +4,7 @@ The file that runs the application
 import os
 from flask_jwt_extended import JWTManager
 
-from app import app, db
-from app.endpoints import api
+from app import app
 from app.models import RevokedToken
 
 config_name = os.getenv('APP_SETTINGS')

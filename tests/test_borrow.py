@@ -2,7 +2,7 @@
 un-returned borrowed books"""
 import json
 
-from tests.BaseTests import HelloBooksTestCase
+from tests.base_tests import HelloBooksTestCase
 
 
 class BorrowBooksTestCase(HelloBooksTestCase):

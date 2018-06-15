@@ -4,7 +4,6 @@ import json
 
 from app import app, db
 from config import app_config
-from app.endpoints import api
 
 
 class HelloBooksTestCase(unittest.TestCase):
@@ -96,7 +95,15 @@ class HelloBooksTestCase(unittest.TestCase):
         self.similar_user_email = {
             'user_id': random.randint(1111, 9999),
             'email': "user@gmail.com",
-            'username': "testuser1",
+            'username': "testkk",
+            'first_name': "Clarke",
+            'last_name': "Mike",
+            'password': "passwordtrade"
+        }
+        self.similar_username = {
+            'user_id': random.randint(1111, 9999),
+            'email': "jkcharles@gmail.com",
+            'username': "user",
             'first_name': "Clarke",
             'last_name': "Mike",
             'password': "passwordtrade"

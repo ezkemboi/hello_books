@@ -3,7 +3,7 @@ The file contains tests for books (Adding books, editing, deleting, borrowing an
 """
 import json
 
-from tests.BaseTests import HelloBooksTestCase
+from tests.base_tests import HelloBooksTestCase
 
 
 class BooksTestCase(HelloBooksTestCase):
