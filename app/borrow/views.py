@@ -7,12 +7,7 @@ import random
 from app.models import Book, Borrow
 from app.helpers.parsers import get_parser
 from run import jwt
-
-
-@jwt_required
-def user_un_returned_books():
-    """Check list of books that user have not returned"""
-    return Borrow.query.filter(Borrow.returned == 'false', Borrow.user_id == get_jwt_identity()).all()
+from app.helpers.helper_functions import user_un_returned_books
 
 
 class BorrowBook(Resource):

@@ -4,7 +4,7 @@ import json
 
 from app import app, db
 from config import app_config
-from app.helpers.endpoints import api
+from app.helpers import endpoints
 
 
 class HelloBooksTestCase(unittest.TestCase):
@@ -154,34 +154,38 @@ class HelloBooksTestCase(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
-    def register_user(self):
+    def register_user(self, data):
         """This method registers a user"""
-        return self.client.post('/api/v1/auth/register', data=json.dumps(self.user_data),
+        return self.client.post('/api/v1/auth/register', data=json.dumps(data),
                                 content_type='application/json')
 
-    def login_user(self):
+    def login_user(self, data):
         """This is a login user helper"""
-        self.register_user()
-        return self.client.post('/api/v1/auth/login', data=json.dumps(self.user_data),
+        self.register_user(self.user_data)
+        return self.client.post('/api/v1/auth/login', data=json.dumps(data),
                                 content_type='application/json')
 
-    def register_admin(self):
+    def register_admin(self, data):
         """This method register admin"""
-        return self.client.post('/api/v1/auth/register', data=json.dumps(self.admin_data),
+        return self.client.post('/api/v1/auth/register', data=json.dumps(data),
                                 content_type='application/json')
 
-    def login_admin(self):
+    def login_admin(self, data):
         """Register and login admin"""
-        self.register_admin()
-        return self.client.post('/api/v1/auth/login', data=json.dumps(self.admin_data),
+        self.register_admin(self.admin_data)
+        return self.client.post('/api/v1/auth/login', data=json.dumps(data),
                                 content_type='application/json')
 
-    def add_book(self):
+    def reset_password(self, data):
+        return self.client.post('/api/v1/auth/reset-password', data=json.dumps(data),
+                                content_type='application/json')
+
+    def add_book(self, data):
         """Add book function for reuse"""
-        admin_login = self.login_admin()
+        admin_login = self.login_admin(self.admin_data)
         login_msg = json.loads(admin_login.data)
         access_token = login_msg['access_token']
-        add_book = self.client.post('/api/v1/books', data=json.dumps(self.add_book_data),
+        add_book = self.client.post('/api/v1/books', data=json.dumps(data),
                                     headers={
                                              "Authorization": "Bearer {}".format(access_token)},
                                     content_type='application/json')
@@ -189,9 +193,9 @@ class HelloBooksTestCase(unittest.TestCase):
 
     def borrow_book(self):
         """Reusable borrow book function"""
-        add_book = self.add_book()
+        add_book = self.add_book(self.add_book_data)
         book_data = json.loads(add_book.data)
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         user_borrow_book = self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),

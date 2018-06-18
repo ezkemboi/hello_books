@@ -18,15 +18,15 @@ class UserRegistration(Resource):
     def post(self):
         """Post method for user registration"""
         registration_args = register_parser.parse_args()
-        email = registration_args['email']
+        email = registration_args['email'].strip().lower()
         first_name = registration_args['first_name'].strip().title()
         last_name = registration_args['last_name'].strip().title()
-        username = registration_args['username']
-        password = registration_args['password']
+        username = registration_args['username'].strip()
+        password = registration_args['password'].strip()
         user = User.query.filter_by(email=email).first()
-        valid_email = re.match("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", email.strip())
-        valid_username = re.match("[A-Za-z0-9@#$%^&+=]{4,}", username.strip())
-        password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
+        valid_email = re.match("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", email)
+        valid_username = re.match("[A-Za-z0-9@#$%^&+=]{4,}", username)
+        password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password)
         taken_username = User.query.filter_by(username=username).first()
         if not valid_email:
             return {"message": "Please provide a valid email!"}, 400
@@ -49,8 +49,8 @@ class UserLogin(Resource):
     def post(self):
         """The post method logs in user"""
         login_args = login_parser.parse_args()
-        email = login_args['email']
-        password = login_args['password']
+        email = login_args['email'].strip()
+        password = login_args['password'].strip()
         log_in_user = User.query.filter_by(email=email).first()
         if not log_in_user:
             return {"message": "Invalid email!"}, 403
@@ -80,11 +80,11 @@ class ResetPassword(Resource):
     def post(self):
         """The method allow user to reset password"""
         reset_pswd_args = reset_password_parser.parse_args()
-        email = reset_pswd_args['email']
+        email = reset_pswd_args['email'].strip()
         reset_user = User.query.filter_by(email=email).first()
         if not reset_user:
             return {"message": "The email does not exist."}, 404
-        password = reset_pswd_args['password']
+        password = reset_pswd_args['password'].strip()
         hashed_password = generate_password_hash(password, method='sha256')
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password.strip())
         if not password_length:

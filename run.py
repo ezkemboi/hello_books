@@ -4,8 +4,9 @@ The file that runs the application
 import os
 from flask_jwt_extended import JWTManager
 
-from app import app
+from app import app, db
 from app.models import RevokedToken
+from app.helpers import endpoints
 
 config_name = os.getenv('APP_SETTINGS')
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET')
@@ -13,10 +14,10 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
 jwt = JWTManager(app)
 
-#
-# @app.before_first_request
-# def create_tables():
-#     db.create_all()
+
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 
 @jwt.token_in_blacklist_loader

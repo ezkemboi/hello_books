@@ -15,9 +15,9 @@ class BorrowBooksTestCase(HelloBooksTestCase):
 
     def test_borrow_book_already_borrowed(self):
         """Test to borrow a book already borrowed and not yet returned"""
-        add_book = self.add_book()
+        add_book = self.add_book(self.add_book_data)
         book_data = json.loads(add_book.data)
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
@@ -28,9 +28,9 @@ class BorrowBooksTestCase(HelloBooksTestCase):
 
     def test_return_book(self):
         """Test user returning book"""
-        add_book = self.add_book()
+        add_book = self.add_book(self.add_book_data)
         book_data = json.loads(add_book.data)
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
@@ -41,9 +41,9 @@ class BorrowBooksTestCase(HelloBooksTestCase):
 
     def test_return_unidentified_book(self):
         """Test user returning book"""
-        add_book = self.add_book()
+        add_book = self.add_book(self.add_book_data)
         book_data = json.loads(add_book.data)
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         self.client.post('/api/v1/users/books/{}'.format(book_data['book_added']['book_id']),
@@ -55,7 +55,7 @@ class BorrowBooksTestCase(HelloBooksTestCase):
     def test_return_borrow_history(self):
         """"Test when user returns history"""
         self.borrow_book()
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         res = self.client.get('/api/v1/users/books', headers={"Authorization": "Bearer {}".format(access_token)})
@@ -63,7 +63,7 @@ class BorrowBooksTestCase(HelloBooksTestCase):
 
     def test_return_unavailable_borrow(self):
         """Return test for when there is no book borrowed"""
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         res = self.client.get('/api/v1/users/books', headers={"Authorization": "Bearer {}".format(access_token)})
@@ -72,7 +72,7 @@ class BorrowBooksTestCase(HelloBooksTestCase):
     def test_un_returned(self):
         """Tests books user has not returned"""
         self.borrow_book()
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         res = self.client.get('/api/v1/users/books?returned=false',
@@ -81,7 +81,7 @@ class BorrowBooksTestCase(HelloBooksTestCase):
 
     def test_unavailable_un_returned(self):
         """Tests books user has not returned"""
-        login_user = self.login_user()
+        login_user = self.login_user(self.user_data)
         login_msg = json.loads(login_user.data)
         access_token = login_msg['access_token']
         res = self.client.get('/api/v1/users/books?returned=false',
