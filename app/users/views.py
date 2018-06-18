@@ -19,8 +19,8 @@ class UserRegistration(Resource):
         """Post method for user registration"""
         registration_args = register_parser.parse_args()
         email = registration_args['email'].strip().lower()
-        first_name = registration_args['first_name'].strip().title()
-        last_name = registration_args['last_name'].strip().title()
+        first_name = registration_args['first_name']
+        last_name = registration_args['last_name']
         username = registration_args['username'].strip()
         password = registration_args['password'].strip()
         user = User.query.filter_by(email=email).first()
@@ -28,6 +28,8 @@ class UserRegistration(Resource):
         valid_username = re.match("[A-Za-z0-9@#$%^&+=]{4,}", username)
         password_length = re.match("[A-Za-z0-9@#$%^&+=]{8,}", password)
         taken_username = User.query.filter_by(username=username).first()
+        if not first_name.strip() or not last_name.strip():
+            return {"message": "First/last name should not be empty."}, 400
         if not valid_email:
             return {"message": "Please provide a valid email!"}, 400
         if not valid_username:

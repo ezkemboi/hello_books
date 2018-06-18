@@ -45,13 +45,15 @@ class AddBook(Resource):
         page = get_books_args['page']
         limit = get_books_args['limit']
         q = request.args.get('q')
-        books = Book.query.paginate(page=page, per_page=limit)
+        books = Book.query.paginate(page=page, per_page=limit, error_out=False)
         all_books = books.items
         num_results = books.total
         total_pages = books.pages
         current_page = books.page
         if q:
             return search_book(q)
+        if str(page) > str(total_pages):
+            return {"message": "Page you try to access is not found"}, 404
         if current_page == 1:
             has_prev_page = None
         has_next_page = books.has_next
@@ -97,7 +99,6 @@ class SingleBook(Resource):
         get_book.update_book()
         edited_book = get_book.book_serializer()
         return {"message": "The book was edited successfully.", "details": edited_book}, 200
-
 
     @jwt_required
     @admin_required

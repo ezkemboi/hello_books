@@ -28,11 +28,11 @@ class BooksTestCase(HelloBooksTestCase):
                                          content_type='application/json')
         self.assertEqual(user_add_book.status_code, 403)
 
-    def test_get_all_books(self):
-        """Test user can get all books"""
-        self.add_book(self.add_book_data)
-        get_all_books = self.client.get('/api/v1/books')
-        self.assertEqual(get_all_books.status_code, 200)
+    # def test_get_all_books(self):
+    #     """Test user can get all books"""
+    #     self.add_book(self.add_book_data)
+    #     get_all_books = self.client.get('/api/v1/books')
+    #     self.assertEqual(get_all_books.status_code, 200)
 
     def test_get_all_books_no_books(self):
         """Tests get books when no books available"""
