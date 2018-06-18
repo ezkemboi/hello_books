@@ -1,18 +1,14 @@
 """
 This module initializes the application
 """
-from flask_api import FlaskAPI
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Api
+
 from config import app_config
 
-from app.models import User, Book
-
-
-def create_app(config_name):
-    """
-    This contains all initialization for application to run
-    """
-    app = FlaskAPI(__name__, instance_relative_config=True)
-    app.config.from_object(app_config[config_name])
-    app.config.from_pyfile('config.py')
-
-    return app
+app = Flask(__name__)
+api = Api(app, prefix='/api/v1')
+app.config.from_object(app_config['development'])
+app.url_map.strict_slashes = False
+db = SQLAlchemy(app)

@@ -6,6 +6,7 @@ source =
 omit =
     app/__init__.py
     tests/__init__.py
+    app/models.py
 
 [report]
 show_missing = True
