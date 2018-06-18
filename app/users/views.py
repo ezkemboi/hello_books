@@ -9,7 +9,6 @@ import random
 
 from app.models import User, RevokedToken
 from app.helpers.parsers import login_parser, register_parser, reset_password_parser
-from run import jwt
 
 
 class UserRegistration(Resource):
