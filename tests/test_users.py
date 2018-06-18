@@ -4,7 +4,7 @@ The file contains the for user functions including register, login, logout, rese
 import json
 
 from tests.base_tests import HelloBooksTestCase
-
+from run import jwt
 
 class AuthTestCase(HelloBooksTestCase):
     """
