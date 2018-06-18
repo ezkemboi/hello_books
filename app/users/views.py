@@ -52,6 +52,8 @@ class UserLogin(Resource):
         email = login_args['email'].strip()
         password = login_args['password'].strip()
         log_in_user = User.query.filter_by(email=email).first()
+        if not password:
+            return {"message": "Please enter password."}, 400
         if not log_in_user:
             return {"message": "Invalid email!"}, 403
         if check_password_hash(log_in_user.password, password):
