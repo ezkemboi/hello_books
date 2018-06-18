@@ -6,7 +6,6 @@ import random
 
 from app.models import Book, Borrow
 from app.helpers.parsers import get_parser
-from run import jwt
 from app.helpers.helper_functions import user_un_returned_books
 
 
