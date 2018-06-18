@@ -5,6 +5,7 @@ import json
 from app import app, db
 from config import app_config
 from app.helpers import endpoints
+from run import jwt
 
 
 class HelloBooksTestCase(unittest.TestCase):
