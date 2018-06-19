@@ -10,7 +10,7 @@ from config import app_config
 
 app = Flask(__name__)
 api = Api(app, prefix='/api/v1')
-app.config.from_object(app_config[os.getenv('APP_SETTINGS')])
+app.config.from_object(app_config['production'])
 app.url_map.strict_slashes = False
 config_name = os.getenv('APP_SETTINGS')
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET')
