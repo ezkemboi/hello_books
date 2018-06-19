@@ -11,6 +11,7 @@ from app.helpers import endpoints
 config_name = os.getenv('APP_SETTINGS')
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET')
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 jwt = JWTManager(app)
 
