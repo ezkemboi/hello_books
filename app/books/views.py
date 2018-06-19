@@ -51,8 +51,8 @@ class AddBook(Resource):
         current_page = books.page
         if q:
             return search_book(q)
-        if str(page) > str(total_pages):
-            return {"message": "Page you try to access is not found"}, 404
+        # if str(page) > str(total_pages):
+        #     return {"message": "Page you try to access is not found"}, 404
         if current_page == 1:
             has_prev_page = None
         has_next_page = books.has_next
