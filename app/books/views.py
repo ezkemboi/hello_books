@@ -1,3 +1,6 @@
+'''
+These are views for adding, getting, editing and deleting a book
+'''
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 import random

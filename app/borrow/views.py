@@ -1,3 +1,7 @@
+'''
+These are views for borrowing, returning and checking history for 
+both books not yet returned and all books ever borrowed.
+'''
 import datetime
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
